@@ -39,12 +39,12 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
           </Link>
 
           {/* Overlay with actions - Hidden on mobile, visible on desktop hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-            <div className="absolute top-3 right-3 flex gap-2">
+          <div className="absolute inset-0 bg-black/20 opacity-0 md:group-hover:opacity-100">
+            <div className="absolute right-3 flex gap-2">
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-black shadow-lg"
+                className="h-8 w-8 p-0 bg-white text-black"
               >
                 <Heart className="h-4 w-4" />
               </Button>
@@ -53,7 +53,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
             <div className="absolute bottom-3 left-3 right-3">
               <Button
                 size="sm"
-                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg"
+                className="w-full bg-primary text-white"
                 onClick={() => showTryOn && onTryOn ? onTryOn(product.id) : null}
               >
                 {showTryOn ? (
@@ -73,7 +73,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
 
           {/* Badges */}
           {product.tags.includes("new") && (
-            <Badge className="absolute top-3 left-3 bg-gradient-to-r from-accent to-primary text-accent-foreground shadow-lg">
+            <Badge className="absolute top-3 left-3 bg-accent text-white">
               New
             </Badge>
           )}
@@ -105,7 +105,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-colors duration-300"
+              className="flex-1 border-neutral-300 dark:border-neutral-600"
               asChild
             >
               <Link href={`/shop/${product.id}`}>
@@ -116,7 +116,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
               <Button
                 size="sm"
                 variant="ghost"
-                className="px-3 hover:bg-accent/10 transition-colors duration-300"
+                className="px-3"
                 onClick={() => onTryOn(product.id)}
               >
                 <Sparkles className="h-4 w-4" />
