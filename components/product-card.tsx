@@ -28,7 +28,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
     <Card className="group relative overflow-hidden border-border/50 bg-card">
       <CardContent className="p-0">
         {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden w-full">
+        <div className="relative -mt-8 aspect-square overflow-hidden w-full">
           <Link href={`/shop/${product.id}`}>
             <Image
               src={showTryOn ? product.tryOnPreview : product.images[0]}
@@ -40,7 +40,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
 
           {/* Overlay with actions - Hidden on mobile, visible on desktop hover */}
           <div className="absolute inset-0 bg-black/20 opacity-0 md:group-hover:opacity-100">
-            <div className="absolute right-3 flex gap-2">
+            <div className="absolute top-3 right-3 flex gap-2">
               <Button
                 size="sm"
                 variant="secondary"

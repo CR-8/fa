@@ -1,27 +1,8 @@
 "use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/componen                  </CardContent>
-                </Card>
-
-                {/* Checkout Button */}
-                <Button className="w-full bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Proceed to Checkout
-                </Button>
-
-                {/* Continue Shopping */}
-                <Button 
-                  variant="outline" 
-                  asChild 
-                  className="w-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
-                >
-                  <Link href="/shop">Continue Shopping</Link>
-                </Button>
-              </div>
-            </div>
-          </div> { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { products } from "@/data/products"
 import { ShoppingCart, Plus, Minus, Trash2, CreditCard } from "lucide-react"
@@ -41,8 +22,8 @@ export default function CartPage() {
     if (newQuantity === 0) {
       setCartItems(cartItems.filter(item => item.product.id !== productId))
     } else {
-      setCartItems(cartItems.map(item => 
-        item.product.id === productId 
+      setCartItems(cartItems.map(item =>
+        item.product.id === productId
           ? { ...item, quantity: newQuantity }
           : item
       ))
@@ -73,7 +54,6 @@ export default function CartPage() {
             {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart
           </p>
         </div>
-
         {cartItems.length > 0 ? (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Cart Items */}
@@ -91,7 +71,6 @@ export default function CartPage() {
                           className="object-cover"
                         />
                       </div>
-
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
@@ -106,7 +85,6 @@ export default function CartPage() {
                               ₹{item.product.price.toLocaleString('en-IN')}
                             </p>
                           </div>
-
                           {/* Quantity Controls and Actions */}
                           <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-2">
                             <Button
@@ -117,7 +95,7 @@ export default function CartPage() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                            
+
                             <div className="flex items-center gap-2 order-1 sm:order-2">
                               <Button
                                 variant="outline"
@@ -127,11 +105,11 @@ export default function CartPage() {
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
-                              
+
                               <span className="w-8 text-center text-neutral-900 dark:text-neutral-50 font-medium">
                                 {item.quantity}
                               </span>
-                              
+
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -141,7 +119,7 @@ export default function CartPage() {
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
-                            
+
                             <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 order-3">
                               ₹{(item.product.price * item.quantity).toLocaleString('en-IN')}
                             </p>
@@ -153,7 +131,6 @@ export default function CartPage() {
                 </Card>
               ))}
             </div>
-
             {/* Order Summary - Sticky on larger screens */}
             <div className="space-y-6">
               <div className="sticky top-24">
@@ -162,44 +139,43 @@ export default function CartPage() {
                     <CardTitle className="text-neutral-900 dark:text-neutral-50">Order Summary</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                  <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal.toLocaleString('en-IN')}</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                    <span>Shipping</span>
-                    <span>{shipping === 0 ? 'Free' : `₹${shipping.toLocaleString('en-IN')}`}</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                    <span>Tax</span>
-                    <span>₹{tax.toLocaleString('en-IN')}</span>
-                  </div>
-                  
-                  <Separator className="bg-neutral-200 dark:bg-neutral-700" />
-                  
-                  <div className="flex justify-between text-lg font-bold text-neutral-900 dark:text-neutral-50">
-                    <span>Total</span>
-                    <span>₹{total.toLocaleString('en-IN')}</span>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                      <span>Subtotal</span>
+                      <span>₹{subtotal.toLocaleString('en-IN')}</span>
+                    </div>
 
-              {/* Checkout Button */}
-              <Button className="w-full bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Proceed to Checkout
-              </Button>
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                      <span>Shipping</span>
+                      <span>{shipping === 0 ? 'Free' : `₹${shipping.toLocaleString('en-IN')}`}</span>
+                    </div>
 
-              {/* Continue Shopping */}
-              <Button 
-                variant="outline" 
-                asChild 
-                className="w-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
-              >
-                <Link href="/shop">Continue Shopping</Link>
-              </Button>
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                      <span>Tax</span>
+                      <span>₹{tax.toLocaleString('en-IN')}</span>
+                    </div>
+
+                    <Separator className="bg-neutral-200 dark:bg-neutral-700" />
+
+                    <div className="flex justify-between text-lg font-bold text-neutral-900 dark:text-neutral-50">
+                      <span>Total</span>
+                      <span>₹{total.toLocaleString('en-IN')}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                {/* Checkout Button */}
+                <Button className="w-full bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Proceed to Checkout
+                </Button>
+                {/* Continue Shopping */}
+                <Button
+                  variant="outline"
+                  asChild
+                  className="w-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
+                >
+                  <Link href="/shop">Continue Shopping</Link>
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
@@ -223,5 +199,5 @@ export default function CartPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
