@@ -4,148 +4,116 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens to match orange design brief */
-  --background: #ffffff;
-  --foreground: #4b5563;
-  --card: #fffbeb;
-  --card-foreground: #4b5563;
+  /* Modern Gen Z Fashion Palette - Softer neutrals */
+  --background: #fafafa; /* neutral-50 instead of pure white */
+  --foreground: #171717; /* neutral-900 instead of pure black */
+  --card: #ffffff;
+  --card-foreground: #171717;
   --popover: #ffffff;
-  --popover-foreground: #4b5563;
-  --primary: #ea580c; /* Orange-600 primary */
+  --popover-foreground: #171717;
+  --primary: #ff6b6b; /* Coral pink - trendy and vibrant */
   --primary-foreground: #ffffff;
-  --secondary: #fffbeb; /* Light beige secondary */
-  --secondary-foreground: #4b5563;
-  --muted: #fffbeb;
-  --muted-foreground: #4b5563;
-  --accent: #f97316; /* Bright orange accent */
+  --secondary: #f5f5f5; /* neutral-100 */
+  --secondary-foreground: #404040; /* neutral-700 */
+  --muted: #f5f5f5; /* neutral-100 */
+  --muted-foreground: #737373; /* neutral-500 */
+  --accent: #4ecdc4; /* Mint green - fresh and modern */
   --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --destructive: #ff4757;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #f9fafb;
-  --ring: rgba(234, 88, 12, 0.5);
-  --chart-1: #f97316;
-  --chart-2: #ea580c;
-  --chart-3: #d97706;
-  --chart-4: #ca8a04;
-  --chart-5: #b45309;
-  --radius: 0.5rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #4b5563;
-  --sidebar-primary: #ea580c;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f97316;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: rgba(234, 88, 12, 0.5);
+  --border: #d4d4d8; /* neutral-300 */
+  --input: #ffffff;
+  --ring: rgba(255, 107, 107, 0.5);
+
+  --radius: 0.75rem;
 }
+
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #f97316;
+  --background: #171717; /* neutral-900 instead of pure black */
+  --foreground: #fafafa; /* neutral-50 instead of pure white */
+  --card: #262626; /* neutral-800 */
+  --card-foreground: #fafafa;
+  --popover: #262626;
+  --popover-foreground: #fafafa;
+  --primary: #ff6b6b;
   --primary-foreground: #ffffff;
-  --secondary: #334155;
-  --secondary-foreground: #f1f5f9;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --accent: #ea580c;
+  --secondary: #404040; /* neutral-700 */
+  --secondary-foreground: #fafafa;
+  --muted: #404040;
+  --muted-foreground: #a3a3a3; /* neutral-400 */
+  --accent: #4ecdc4;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  --destructive: #ff4757;
   --destructive-foreground: #ffffff;
-  --border: #334155;
-  --input: #1e293b;
-  --ring: rgba(249, 115, 22, 0.5);
-  --chart-1: #f97316;
-  --chart-2: #ea580c;
-  --chart-3: #d97706;
-  --chart-4: #ca8a04;
-  --chart-5: #b45309;
-  --sidebar: #1e293b;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #f97316;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ea580c;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #334155;
-  --sidebar-ring: rgba(249, 115, 22, 0.5);
-}
-
-@theme inline {
-  /* Updated font configuration for Work Sans and Open Sans */
-  --font-sans: "Work Sans", system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --border: #525252; /* neutral-600 */
+  --input: #262626;
+  --ring: rgba(255, 107, 107, 0.5);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: var(--ring);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
-  /* Added typography improvements */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-bold;
+
+  /* Typography improvements */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
   }
   h1 {
-    @apply text-3xl leading-tight;
+    font-size: 1.875rem;
+    line-height: 1.2;
   }
   h2 {
-    @apply text-2xl leading-tight;
+    font-size: 1.5rem;
+    line-height: 1.2;
   }
   h3 {
-    @apply text-xl leading-tight;
+    font-size: 1.25rem;
+    line-height: 1.2;
   }
   p {
-    @apply leading-relaxed;
+    line-height: 1.6;
   }
 }
 
-/* Import Google Fonts for Work Sans */
-@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap");
+/* Import Google Fonts for modern typography */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap");
+
+/* Custom scrollbar for Gen Z vibe */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Smooth animations */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -16,7 +16,9 @@ export const chatHistory = [
     id: "m3",
     sender: "ai" as const,
     type: "tryon-preview" as const,
-    image: "/outfit-preview-white-tee-and-jeans.jpg",
+    description: "This classic white tee paired with blue denim jeans creates a timeless casual look. The soft cotton fabric of the tee provides comfort while the slim-fit jeans add a modern touch. Perfect for everyday wear with sneakers or casual shoes.",
+    productName: "Classic White Tee & Blue Denim Jeans",
+    productImage: "/white-t-shirt.png",
     timestamp: "2025-09-08T10:02:00Z",
   },
 ]

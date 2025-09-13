@@ -26,22 +26,23 @@ export default function ShopPage() {
   })
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <Card className="rounded-none border-x-0 border-t-0">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 px-4">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-primary/20 rounded-full">
                 <Filter className="h-5 w-5 text-primary" />
               </div>
-              Shop
+              <span className="text-lg md:text-xl">Shop</span>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant={viewMode === "grid" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("grid")}
+                className="hidden md:flex"
               >
                 <Grid className="h-4 w-4" />
               </Button>
@@ -49,6 +50,7 @@ export default function ShopPage() {
                 variant={viewMode === "list" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("list")}
+                className="hidden md:flex"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -58,28 +60,28 @@ export default function ShopPage() {
       </Card>
 
       {/* Search Bar */}
-      <div className="p-4 border-b">
+      <div className="p-3 md:p-4 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products, brands, or styles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-11 md:h-10"
           />
         </div>
       </div>
 
       {/* Category Filters */}
-      <div className="p-4 border-b">
-        <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="p-3 md:p-4 border-b">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((category) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedCategory(category.id)}
-              className="whitespace-nowrap"
+              className="whitespace-nowrap text-xs md:text-sm px-3 py-2 h-auto"
             >
               {category.name}
             </Button>
@@ -88,7 +90,7 @@ export default function ShopPage() {
       </div>
 
       {/* Results Header */}
-      <div className="px-4 py-3 flex items-center justify-between">
+      <div className="px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{filteredProducts.length} products found</span>
           {selectedCategory !== "all" && (
@@ -100,7 +102,7 @@ export default function ShopPage() {
       </div>
 
       {/* Product Grid */}
-      <div className="p-4">
+      <div className="p-3 md:p-4">
         {filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No products found matching your criteria</p>
@@ -115,7 +117,7 @@ export default function ShopPage() {
             </Button>
           </div>
         ) : (
-          <div className={viewMode === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+          <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4" : "space-y-3 md:space-y-4"}>
             {filteredProducts.map((product) => (
               <Link key={product.id} href={`/shop/${product.id}`}>
                 <div className={viewMode === "list" ? "flex gap-4" : ""}>

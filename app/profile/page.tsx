@@ -32,7 +32,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <Card className="rounded-none border-x-0 border-t-0">
         <CardHeader className="pb-3">

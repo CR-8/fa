@@ -1,7 +1,10 @@
+"use client"
+
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Heart, ShoppingCart, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 interface Product {
@@ -17,36 +20,109 @@ interface Product {
 interface ProductCardProps {
   product: Product
   showTryOn?: boolean
+  onTryOn?: (productId: string) => void
 }
 
-export function ProductCard({ product, showTryOn = false }: ProductCardProps) {
+export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCardProps) {
   return (
-    <Card className="overflow-hidden group hover:shadow-lg transition-shadow">
+    <Card className="group relative overflow-hidden border-border/50 bg-card">
       <CardContent className="p-0">
-        <Link href={`/shop/${product.id}`}>
-          <div className="relative aspect-square">
+        {/* Product Image */}
+        <div className="relative aspect-square overflow-hidden w-full">
+          <Link href={`/shop/${product.id}`}>
             <Image
               src={showTryOn ? product.tryOnPreview : product.images[0]}
               alt={product.name}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="object-cover w-full h-full"
             />
-            {product.tags.includes("new") && (
-              <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">New</Badge>
+          </Link>
+
+          {/* Overlay with actions - Hidden on mobile, visible on desktop hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-3 right-3 flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 w-8 p-0 bg-white/90 hover:bg-white text-black shadow-lg"
+              >
+                <Heart className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="absolute bottom-3 left-3 right-3">
+              <Button
+                size="sm"
+                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-lg"
+                onClick={() => showTryOn && onTryOn ? onTryOn(product.id) : null}
+              >
+                {showTryOn ? (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Try On
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Badges */}
+          {product.tags.includes("new") && (
+            <Badge className="absolute top-3 left-3 bg-gradient-to-r from-accent to-primary text-accent-foreground shadow-lg">
+              New
+            </Badge>
+          )}
+        </div>
+
+        {/* Product Info */}
+        <div className="p-3 space-y-2">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <Link href={`/shop/${product.id}`}>
+                <h3 className="font-semibold text-sm line-clamp-2">
+                  {product.name}
+                </h3>
+              </Link>
+              <p className="text-xs text-muted-foreground mt-1">{product.brand}</p>
+            </div>
+            <div className="flex flex-col items-end ml-2">
+              <span className="font-bold text-base text-neutral-900 dark:text-neutral-50">
+                ₹{product.price.toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs text-muted-foreground line-through">
+                ₹{(product.price * 1.2).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-colors duration-300"
+              asChild
+            >
+              <Link href={`/shop/${product.id}`}>
+                View Details
+              </Link>
+            </Button>
+            {showTryOn && onTryOn && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="px-3 hover:bg-accent/10 transition-colors duration-300"
+                onClick={() => onTryOn(product.id)}
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
             )}
           </div>
-        </Link>
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <h3 className="font-semibold text-sm line-clamp-1">{product.name}</h3>
-              <p className="text-xs text-muted-foreground">{product.brand}</p>
-            </div>
-            <p className="font-bold text-sm">${product.price}</p>
-          </div>
-          <Button asChild size="sm" className="w-full">
-            <Link href={`/shop/${product.id}`}>{showTryOn ? "Try On" : "View Details"}</Link>
-          </Button>
         </div>
       </CardContent>
     </Card>

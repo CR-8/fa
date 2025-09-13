@@ -18,31 +18,26 @@ export default function HomePage() {
     .slice(0, 6)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Hero Section */}
       <section className="px-4 pt-8 pb-8">
         {/* Increased bottom padding for better spacing */}
-        <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 shadow-lg">
-          {/* Enhanced gradient and added shadow */}
+        <Card className="bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
           <CardContent className="p-8 text-center">
-            {/* Increased padding for more spacious feel */}
             <div className="flex justify-center mb-6">
               <div className="p-4 bg-primary/20 rounded-full">
                 <Sparkles className="h-10 w-10 text-primary" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold mb-4 text-balance">AI-Powered Fashion Assistant</h1>{" "}
-            {/* Increased font size and margin */}
-            <p className="text-muted-foreground mb-6 text-pretty text-lg leading-relaxed">
-              {/* Enhanced typography */}
+            <h1 className="text-3xl font-bold mb-4 text-balance text-neutral-900 dark:text-neutral-50">AI-Powered Fashion Assistant</h1>
+            <p className="text-neutral-600 dark:text-neutral-400 mb-6 text-pretty text-lg leading-relaxed">
               Discover your perfect style with AI recommendations and virtual try-on technology
             </p>
             <div className="flex gap-3 justify-center">
-              {/* Made buttons larger */}
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
                 <Link href="/ai-fa">Chat with AI-FA</Link>
               </Button>
-              <Button variant="outline" asChild size="lg">
+              <Button variant="outline" asChild size="lg" className="border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300">
                 <Link href="/shop">Browse Shop</Link>
               </Button>
             </div>
@@ -72,7 +67,7 @@ export default function HomePage() {
         </div>
         <p className="text-muted-foreground mb-6 text-lg leading-relaxed">{suggestions[0]?.reasoning}</p>{" "}
         {/* Enhanced typography */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
           {/* Increased gap between cards */}
           {suggestedProducts.map((product) => (
             <ProductCard key={product.id} product={product} showTryOn />
@@ -96,7 +91,7 @@ export default function HomePage() {
             </Link>
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
           {newArrivals.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
