@@ -10,6 +10,20 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+  // Ensure content is properly formatted
+  const formattedContent = content
+    // Fix common markdown issues
+    .replace(/\*\*\s+/g, '**') // Remove spaces after bold markers
+    .replace(/\s+\*\*/g, '**') // Remove spaces before bold markers
+    .replace(/\*\s+\*/g, '**') // Fix broken bold formatting
+    // Ensure proper list formatting
+    .replace(/^\*\s+/gm, '* ') // Ensure single space after list markers
+    .replace(/^-\s+/gm, '- ') // Ensure single space after dash markers
+    // Clean up headers
+    .replace(/^#+\s*/gm, (match) => match.trim() + ' ') // Ensure space after header markers
+    // Fix line breaks
+    .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace excessive newlines
+
   return (
     <div className={cn("prose prose-neutral dark:prose-invert max-w-none", className)}>
       <ReactMarkdown
@@ -88,7 +102,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
           ),
         }}
       >
-        {content}
+        {formattedContent}
       </ReactMarkdown>
     </div>
   )

@@ -18,6 +18,11 @@ interface ChatMessage {
   description?: string
   productName?: string
   productImage?: string
+  userImage?: string
+  generatedImage?: string
+  usedFallback?: boolean
+  provider?: string
+  message?: string
 }
 
 interface ChatBubbleProps {
@@ -34,18 +39,64 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
       <div className="flex justify-center mb-4">
         <Card className="max-w-md">
           <CardContent className="p-4">
-            <h4 className="font-semibold mb-2 text-center">Virtual Try-On: {message.productName}</h4>
-            <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
-              <Image
-                src={message.productImage || "/placeholder.jpg"}
-                alt={message.productName || "Product"}
-                fill
-                className="object-cover"
-              />
-            </div>
+            <h4 className="font-semibold mb-2 text-center flex items-center gap-2">
+              {message.generatedImage ? "🖼️ AI Generated Try-On" : "👔 Style Preview"}: {message.productName}
+              {message.usedFallback && (
+                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                  {message.provider || "Enhanced Styling"}
+                </span>
+              )}
+              {!message.usedFallback && (
+                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                  AI Generated
+                </span>
+              )}
+            </h4>
+
+            {message.generatedImage ? (
+              // Show the AI-generated combined image
+              <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
+                <Image
+                  src={message.generatedImage}
+                  alt={`AI generated try-on: ${message.productName}`}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                  AI Generated
+                </div>
+              </div>
+            ) : (
+              // Fallback: show product image only
+              <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
+                <Image
+                  src={message.productImage || "/placeholder.jpg"}
+                  alt={message.productName || "Product"}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end justify-center p-4">
+                  <div className="text-center text-white">
+                    <div className="text-lg mb-1">✨</div>
+                    <div className="text-sm font-medium">Style Preview</div>
+                    <div className="text-xs opacity-90">
+                      {message.message?.includes("quota") ? 
+                        "API quota reached - try again later!" : 
+                        "Enhanced styling recommendations"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="text-sm text-muted-foreground mb-3">
-              <p className="font-medium mb-1">Fashion Expert Analysis:</p>
+              <p className="font-medium mb-1">
+                {message.generatedImage ? "AI Fashion Analysis:" : "Fashion Expert Analysis:"}
+              </p>
               <p>{message.description}</p>
+              {message.message && (
+                <p className="mt-2 text-xs italic text-blue-600">{message.message}</p>
+              )}
             </div>
             <Button className="w-full" size="sm">
               Add to Cart

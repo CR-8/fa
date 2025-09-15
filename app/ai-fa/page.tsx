@@ -1,22 +1,76 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ChatBubble } from "@/components/chat-bubble"
 import { chatHistory } from "@/data/chat"
-import { Send, Sparkles, Bot, User, Zap, Heart } from "lucide-react"
+import { user } from "@/data/user"
+import { rateLimiter } from "@/lib/rate-limiter"
+import { Send, Sparkles, Bot, User, Zap, Heart, Image as ImageIcon } from "lucide-react"
 
 export default function AIFAPage() {
   const [messages, setMessages] = useState(chatHistory)
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [userImages, setUserImages] = useState<string[]>([])
+
+  // Load user images from localStorage (uploaded images from profile)
+  useEffect(() => {
+    const savedImages = localStorage.getItem('userUploadedImages')
+    if (savedImages) {
+      try {
+        const parsedImages = JSON.parse(savedImages)
+        setUserImages(parsedImages.filter((img: string) => img && img !== "/placeholder.svg"))
+      } catch (error) {
+        console.warn('Failed to parse saved user images:', error)
+      }
+    }
+
+    // Also check for profile images
+    const profileImages = user.poses?.filter(img => img && img !== "/placeholder.svg") || []
+    if (profileImages.length > 0 && userImages.length === 0) {
+      setUserImages(profileImages)
+    }
+  }, [])
+
+  // Listen for profile image updates
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedImages = localStorage.getItem('userUploadedImages')
+      if (savedImages) {
+        try {
+          const parsedImages = JSON.parse(savedImages)
+          setUserImages(parsedImages.filter((img: string) => img && img !== "/placeholder.svg"))
+        } catch (error) {
+          console.warn('Failed to parse saved user images:', error)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
+
+    // Check rate limit
+    if (!rateLimiter.canMakeRequest()) {
+      const waitTime = Math.ceil(rateLimiter.getTimeUntilNextRequest() / 1000);
+      const rateLimitMessage = {
+        id: `m${messages.length + 1}`,
+        sender: "ai" as const,
+        text: `⏱️ Please wait ${waitTime} seconds before sending another message to avoid overwhelming the AI service.`,
+        timestamp: new Date().toISOString(),
+        suggestedProducts: [],
+      }
+      setMessages([...messages, rateLimitMessage])
+      return
+    }
 
     const newMessage = {
       id: `m${messages.length + 1}`,
@@ -29,28 +83,55 @@ export default function AIFAPage() {
     setInputValue("")
     setIsTyping(true)
 
-    // Call Gemini chat API
+    // Call Gemini chat API with user images
     try {
       const res = await fetch("/api/gemini-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: inputValue })
+        body: JSON.stringify({
+          message: inputValue,
+          userImages: userImages.filter(img => img && img !== "/placeholder.svg")
+        })
       })
-      const data = await res.json()
 
-      const aiResponse = {
-        id: `m${messages.length + 2}`,
-        sender: "ai" as const,
-        text: data.reply,
-        timestamp: new Date().toISOString(),
-        suggestedProducts: data.products,
+      if (res.status === 429) {
+        const data = await res.json();
+        const retryAfter = data.retryAfter || 60;
+        const errorMessage = {
+          id: `m${messages.length + 2}`,
+          sender: "ai" as const,
+          text: `🤖 I'm currently receiving too many requests. Please wait ${retryAfter} seconds and try again!`,
+          timestamp: new Date().toISOString(),
+          suggestedProducts: [],
+        }
+        setMessages((prev) => [...prev, errorMessage])
+      } else if (res.status === 503) {
+        const data = await res.json();
+        const retryAfter = data.retryAfter || 30;
+        const errorMessage = {
+          id: `m${messages.length + 2}`,
+          sender: "ai" as const,
+          text: `🧠 My AI brain is taking a quick break! Please try again in ${retryAfter} seconds.`,
+          timestamp: new Date().toISOString(),
+          suggestedProducts: [],
+        }
+        setMessages((prev) => [...prev, errorMessage])
+      } else {
+        const data = await res.json()
+        const aiResponse = {
+          id: `m${messages.length + 2}`,
+          sender: "ai" as const,
+          text: data.reply,
+          timestamp: new Date().toISOString(),
+          suggestedProducts: data.products,
+        }
+        setMessages((prev) => [...prev, aiResponse])
       }
-      setMessages((prev) => [...prev, aiResponse])
     } catch (error) {
       const errorResponse = {
         id: `m${messages.length + 2}`,
         sender: "ai" as const,
-        text: "Sorry, I'm having trouble processing your request. Please try again.",
+        text: "Sorry, I'm having trouble processing your request. Please check your internet connection and try again.",
         timestamp: new Date().toISOString(),
         suggestedProducts: [],
       }
@@ -61,40 +142,119 @@ export default function AIFAPage() {
   }
 
   const handleTryOn = async (productId: string) => {
+    // Check rate limit
+    if (!rateLimiter.canMakeRequest()) {
+      const waitTime = Math.ceil(rateLimiter.getTimeUntilNextRequest() / 1000);
+      const rateLimitMessage = {
+        id: `m${messages.length + 1}`,
+        sender: "ai" as const,
+        text: `⏱️ Please wait ${waitTime} seconds before using the try-on feature to avoid overwhelming the AI service.`,
+        timestamp: new Date().toISOString(),
+        suggestedProducts: [],
+      }
+      setMessages([...messages, rateLimitMessage])
+      return
+    }
+
     setIsTyping(true)
     try {
-      const res = await fetch("/api/try-on", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, poseIndex: 0 })
-      })
-      const data = await res.json()
-      if (data.description) {
-        const tryOnMessage = {
-          id: `m${messages.length + 1}`,
-          sender: "ai" as const,
-          type: "tryon-preview" as const,
-          description: data.description,
-          productName: data.productName,
-          productImage: data.productImage,
-          timestamp: new Date().toISOString(),
-        }
-        setMessages((prev) => [...prev, tryOnMessage])
-      } else {
+      // Use the first available user image for try-on (Cloudinary URL)
+      const userImageToUse = userImages.length > 0 ? userImages[0] : user.poses?.[0] || "/placeholder.svg";
+
+      console.log("Try-on image URL:", userImageToUse); // Debug log to see if Cloudinary URL is being used
+
+      if (userImageToUse === "/placeholder.svg") {
         const errorMessage = {
           id: `m${messages.length + 1}`,
           sender: "ai" as const,
-          text: "Sorry, I couldn't generate the try-on preview. Please try again.",
+          text: "To use the try-on feature, please upload some photos of yourself in your profile page first.",
           timestamp: new Date().toISOString(),
           suggestedProducts: [],
         }
         setMessages((prev) => [...prev, errorMessage])
+        setIsTyping(false)
+        return
+      }
+
+      // Add loading message showing we're using their uploaded image
+      const loadingMessage = {
+        id: `m${messages.length + 1}`,
+        sender: "ai" as const,
+        text: `🎨 Creating your personalized try-on using your uploaded photo... This may take a moment!`,
+        timestamp: new Date().toISOString(),
+        suggestedProducts: [],
+      }
+      setMessages((prev) => [...prev, loadingMessage])
+
+      const res = await fetch("/api/try-on", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          userImageUrl: userImageToUse
+        })
+      })
+
+      if (res.status === 429) {
+        const data = await res.json();
+        const retryAfter = data.retryAfter || 60;
+        const errorMessage = {
+          id: `m${messages.length + 1}`,
+          sender: "ai" as const,
+          text: `🤖 AI service is at capacity. Please wait ${retryAfter} seconds and try the try-on feature again!`,
+          timestamp: new Date().toISOString(),
+          suggestedProducts: [],
+        }
+        setMessages((prev) => [...prev, errorMessage])
+      } else if (res.status === 503) {
+        const data = await res.json();
+        const retryAfter = data.retryAfter || 30;
+        const errorMessage = {
+          id: `m${messages.length + 1}`,
+          sender: "ai" as const,
+          text: `🧠 AI service is temporarily unavailable. Please try again in ${retryAfter} seconds.`,
+          timestamp: new Date().toISOString(),
+          suggestedProducts: [],
+        }
+        setMessages((prev) => [...prev, errorMessage])
+      } else {
+        const data = await res.json()
+
+        if (data.description && data.success) {
+          // Remove the loading message before adding the result
+          setMessages((prev) => prev.filter(msg => !msg.text?.includes("Creating your personalized try-on")))
+          
+          const tryOnMessage = {
+            id: `m${messages.length + 1}`,
+            sender: "ai" as const,
+            type: "tryon-preview" as const,
+            description: data.usedFallback
+              ? `${data.description}\n\n*Using enhanced styling recommendations*`
+              : data.description,
+            productName: data.productName,
+            productImage: data.productImage,
+            userImage: data.userImage,
+            generatedImage: data.generatedImage,
+            usedFallback: data.usedFallback,
+            timestamp: new Date().toISOString(),
+          }
+          setMessages((prev) => [...prev, tryOnMessage])
+        } else {
+          const errorMessage = {
+            id: `m${messages.length + 1}`,
+            sender: "ai" as const,
+            text: data.error || "Sorry, I couldn't generate the try-on preview. Please try again.",
+            timestamp: new Date().toISOString(),
+            suggestedProducts: [],
+          }
+          setMessages((prev) => [...prev, errorMessage])
+        }
       }
     } catch (error) {
       const errorMessage = {
         id: `m${messages.length + 1}`,
         sender: "ai" as const,
-        text: "Error generating try-on preview.",
+        text: "Error generating try-on preview. Please try again.",
         timestamp: new Date().toISOString(),
         suggestedProducts: [],
       }
@@ -148,6 +308,23 @@ export default function AIFAPage() {
               <Badge variant="outline" className="border-primary/20 text-primary">
                 <Heart className="w-3 h-3 mr-1" />
                 Trusted by 10K+ users
+              </Badge>
+              {userImages.length > 0 ? (
+                <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                  Using {userImages.length} uploaded photo{userImages.length > 1 ? 's' : ''} from Cloudinary
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-orange-500/20 text-orange-600">
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                  Upload photos for better recommendations
+                </Badge>
+              )}
+              
+              {/* Quota status badge */}
+              <Badge variant="outline" className="border-blue-500/20 text-blue-600">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
+                Enhanced Styling Mode
               </Badge>
             </div>
           </div>

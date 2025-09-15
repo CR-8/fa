@@ -6,7 +6,7 @@ export interface FormattedAIResponse {
 export function formatAIResponse(rawResponse: string): FormattedAIResponse {
   // Extract product IDs from the response
   const productIdMatches = rawResponse.match(/Product ID[s]?:\s*([0-9,\s]+)/gi)
-  const suggestedProductIds = productIdMatches 
+  const suggestedProductIds = productIdMatches
     ? productIdMatches
         .join(' ')
         .replace(/Product ID[s]?:\s*/gi, '')
@@ -15,26 +15,27 @@ export function formatAIResponse(rawResponse: string): FormattedAIResponse {
         .filter(id => id && /^\d+$/.test(id))
     : []
 
-  // Clean up the message
+  // Clean up the message - be more careful with markdown preservation
   let cleanMessage = rawResponse
-    // Remove product ID references
+    // Remove product ID references but preserve markdown structure
     .replace(/\(Product ID[^)]*\)/gi, '')
     .replace(/Product ID[s]?:\s*[0-9,\s]+/gi, '')
-    // Clean up excessive asterisks and formatting
-    .replace(/\*\*([^*]+)\*\*/g, '**$1**') // Ensure proper bold formatting
-    .replace(/\* \*\*/g, '* **') // Fix list item formatting
-    .replace(/\*\s+/g, '* ') // Clean up list spacing
-    // Remove redundant whitespace
-    .replace(/\s+/g, ' ')
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    // Clean up excessive whitespace but preserve intentional line breaks
+    .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
+    .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace excessive newlines with double newline
     .trim()
 
-  // Add proper markdown formatting for better readability
+  // Ensure proper markdown formatting
   cleanMessage = cleanMessage
-    // Ensure proper spacing around headers
-    .replace(/^([^#\n])/gm, '\n$1')
-    .replace(/\n\n\n+/g, '\n\n')
-    .trim()
+    // Fix common markdown issues
+    .replace(/\*\*\s+/g, '**') // Remove spaces after bold markers
+    .replace(/\s+\*\*/g, '**') // Remove spaces before bold markers
+    .replace(/\*\s+\*/g, '**') // Fix broken bold formatting
+    // Ensure proper list formatting
+    .replace(/^\*\s+/gm, '* ') // Ensure single space after list markers
+    .replace(/^-\s+/gm, '- ') // Ensure single space after dash markers
+    // Clean up headers
+    .replace(/^#+\s*/gm, (match) => match.trim() + ' ') // Ensure space after header markers
 
   return {
     message: cleanMessage,
