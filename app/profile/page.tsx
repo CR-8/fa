@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,16 +12,59 @@ import Image from "next/image"
 import { uploadImage } from "@/lib/upload"
 
 export default function ProfilePage() {
+  // Helper function to validate Cloudinary URLs
+  const isValidCloudinaryUrl = (url: string): boolean => {
+    if (!url || url === "/placeholder.svg") return false
+    // Check if it's a Cloudinary URL (contains cloudinary.com)
+    return url.includes('cloudinary.com') && (url.startsWith('http://') || url.startsWith('https://'))
+  }
+
+  // Initialize poses from localStorage if available, otherwise use default poses
+  const getInitialPoses = () => {
+    // Check if we're in the browser (client-side)
+    if (typeof window === 'undefined') {
+      return user.poses // Server-side: use default poses
+    }
+    
+    try {
+      const storedImages = JSON.parse(localStorage.getItem('userUploadedImages') || '[]')
+      const validImages = storedImages.filter((img: string) => img && img !== "/placeholder.svg" && isValidCloudinaryUrl(img))
+      
+      console.log("🔍 Debug - Profile page localStorage images:", storedImages); // Debug log
+      console.log("🔍 Debug - Profile page valid Cloudinary images:", validImages); // Debug log
+      
+      // If we have valid Cloudinary images, use them for poses, otherwise use defaults
+      if (validImages.length > 0) {
+        // Fill with Cloudinary images, then pad with placeholders if needed
+        const poses = [...validImages]
+        while (poses.length < 3) {
+          poses.push("/placeholder.svg")
+        }
+        return poses.slice(0, 3) // Ensure exactly 3 poses
+      }
+    } catch (error) {
+      console.warn('Failed to parse localStorage in profile page:', error)
+    }
+    
+    return user.poses // Fall back to default poses
+  }
+
   const [formData, setFormData] = useState({
     name: user.name,
     email: user.email,
   })
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [avatar, setAvatar] = useState(user.avatar || "/placeholder.svg")
-  const [poses, setPoses] = useState(user.poses)
+  const [poses, setPoses] = useState(user.poses) // Start with default poses
   const [uploading, setUploading] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Initialize poses from localStorage after component mounts
+  useEffect(() => {
+    const initialPoses = getInitialPoses()
+    setPoses(initialPoses)
+  }, [])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -43,14 +86,23 @@ export default function ProfilePage() {
 
     setUploading('avatar')
     const result = await uploadImage(file)
-    if (result) {
+    if (result && result.url && isValidCloudinaryUrl(result.url)) {
       setAvatar(result.url)
       setUploadSuccess('avatar')
       setTimeout(() => setUploadSuccess(null), 3000)
 
-      // Update localStorage for AI chat access
+      // Update localStorage with avatar URL included in user images array
       const currentImages = JSON.parse(localStorage.getItem('userUploadedImages') || '[]')
-      localStorage.setItem('userUploadedImages', JSON.stringify([...currentImages.filter((img: string) => !img.includes('avatar')), result.url]))
+      const validImages = currentImages.filter((img: string) => img && img !== "/placeholder.svg" && isValidCloudinaryUrl(img))
+      
+      // Add avatar if it's not already in the array
+      if (!validImages.includes(result.url)) {
+        validImages.push(result.url)
+      }
+      
+      localStorage.setItem('userUploadedImages', JSON.stringify(validImages))
+    } else {
+      console.error('Invalid Cloudinary URL received:', result?.url)
     }
     setUploading(null)
   }
@@ -61,26 +113,31 @@ export default function ProfilePage() {
 
     setUploading(`pose-${index}`)
     const result = await uploadImage(file)
-    if (result) {
+    if (result && result.url && isValidCloudinaryUrl(result.url)) {
       const newPoses = [...poses]
       newPoses[index] = result.url
       setPoses(newPoses)
       setUploadSuccess(`pose-${index}`)
       setTimeout(() => setUploadSuccess(null), 3000)
 
-      // Update localStorage for AI chat access
-      const currentImages = JSON.parse(localStorage.getItem('userUploadedImages') || '[]')
-      const updatedImages = [...currentImages]
-      updatedImages[index] = result.url
-      localStorage.setItem('userUploadedImages', JSON.stringify(updatedImages))
+      // Update localStorage with all valid Cloudinary URLs from poses
+      const validCloudinaryUrls = newPoses.filter(pose => pose !== "/placeholder.svg" && isValidCloudinaryUrl(pose))
+      localStorage.setItem('userUploadedImages', JSON.stringify(validCloudinaryUrls))
+    } else {
+      console.error('Invalid Cloudinary URL received:', result?.url)
     }
     setUploading(null)
   }
 
   const removePose = (index: number) => {
     const newPoses = [...poses]
+    const removedUrl = newPoses[index]
     newPoses[index] = "/placeholder.svg"
     setPoses(newPoses)
+
+    // Update localStorage with remaining valid Cloudinary URLs
+    const validCloudinaryUrls = newPoses.filter(pose => pose !== "/placeholder.svg" && isValidCloudinaryUrl(pose))
+    localStorage.setItem('userUploadedImages', JSON.stringify(validCloudinaryUrls))
   }
 
   return (

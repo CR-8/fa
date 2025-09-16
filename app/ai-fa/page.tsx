@@ -18,22 +18,34 @@ export default function AIFAPage() {
   const [isTyping, setIsTyping] = useState(false)
   const [userImages, setUserImages] = useState<string[]>([])
 
+  // Helper function to validate Cloudinary URLs
+  const isValidCloudinaryUrl = (url: string): boolean => {
+    if (!url || url === "/placeholder.svg") return false
+    // Check if it's a Cloudinary URL (contains cloudinary.com)
+    return url.includes('cloudinary.com') && (url.startsWith('http://') || url.startsWith('https://'))
+  }
+
   // Load user images from localStorage (uploaded images from profile)
   useEffect(() => {
     const savedImages = localStorage.getItem('userUploadedImages')
+    console.log("🔍 Debug - localStorage 'userUploadedImages':", savedImages); // Debug log
     if (savedImages) {
       try {
         const parsedImages = JSON.parse(savedImages)
-        setUserImages(parsedImages.filter((img: string) => img && img !== "/placeholder.svg"))
+        console.log("🔍 Debug - parsed images:", parsedImages); // Debug log
+        const filteredImages = parsedImages.filter((img: string) => img && img !== "/placeholder.svg" && isValidCloudinaryUrl(img))
+        console.log("🔍 Debug - filtered valid Cloudinary images:", filteredImages); // Debug log
+        setUserImages(filteredImages)
       } catch (error) {
         console.warn('Failed to parse saved user images:', error)
       }
     }
 
-    // Also check for profile images
+    // Also check for profile images as fallback only if no Cloudinary images
     const profileImages = user.poses?.filter(img => img && img !== "/placeholder.svg") || []
     if (profileImages.length > 0 && userImages.length === 0) {
-      setUserImages(profileImages)
+      console.log("🔍 Debug - using fallback profile images (these are NOT Cloudinary):", profileImages); // Debug log
+      // Don't use these as they're old local images, better to ask user to upload
     }
   }, [])
 
@@ -41,18 +53,40 @@ export default function AIFAPage() {
   useEffect(() => {
     const handleStorageChange = () => {
       const savedImages = localStorage.getItem('userUploadedImages')
+      console.log("🔍 Debug - Storage change detected, new value:", savedImages); // Debug log
       if (savedImages) {
         try {
           const parsedImages = JSON.parse(savedImages)
-          setUserImages(parsedImages.filter((img: string) => img && img !== "/placeholder.svg"))
+          const filteredImages = parsedImages.filter((img: string) => img && img !== "/placeholder.svg" && isValidCloudinaryUrl(img))
+          console.log("🔍 Debug - Updated filtered Cloudinary images after storage change:", filteredImages); // Debug log
+          setUserImages(filteredImages)
         } catch (error) {
           console.warn('Failed to parse saved user images:', error)
         }
       }
     }
 
+    // Listen for storage events from other tabs/windows
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    
+    // Also periodically check localStorage since storage events don't fire for same-tab changes
+    const interval = setInterval(() => {
+      const savedImages = localStorage.getItem('userUploadedImages')
+      if (savedImages) {
+        try {
+          const parsedImages = JSON.parse(savedImages)
+          const filteredImages = parsedImages.filter((img: string) => img && img !== "/placeholder.svg" && isValidCloudinaryUrl(img))
+          setUserImages(filteredImages)
+        } catch (error) {
+          console.warn('Failed to parse saved user images:', error)
+        }
+      }
+    }, 2000) // Check every 2 seconds
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const handleSendMessage = async () => {
@@ -158,16 +192,21 @@ export default function AIFAPage() {
 
     setIsTyping(true)
     try {
-      // Use the first available user image for try-on (Cloudinary URL)
-      const userImageToUse = userImages.length > 0 ? userImages[0] : user.poses?.[0] || "/placeholder.svg";
+      // Use the first available user image for try-on (only Cloudinary URLs)
+      const validCloudinaryImages = userImages.filter(img => isValidCloudinaryUrl(img))
+      const userImageToUse = validCloudinaryImages.length > 0 ? validCloudinaryImages[0] : "/placeholder.svg";
 
-      console.log("Try-on image URL:", userImageToUse); // Debug log to see if Cloudinary URL is being used
+      console.log("🔍 Debug - userImages array:", userImages); // Debug log to see what's in userImages
+      console.log("🔍 Debug - validCloudinaryImages:", validCloudinaryImages); // Debug log to see valid Cloudinary images
+      console.log("🔍 Debug - userImages.length:", userImages.length); // Debug log to see array length
+      console.log("🔍 Debug - user.poses:", user.poses); // Debug log to see fallback poses
+      console.log("Try-on image URL (should be Cloudinary):", userImageToUse); // Debug log to see if Cloudinary URL is being used
 
       if (userImageToUse === "/placeholder.svg") {
         const errorMessage = {
           id: `m${messages.length + 1}`,
           sender: "ai" as const,
-          text: "To use the try-on feature, please upload some photos of yourself in your profile page first.",
+          text: "To use the try-on feature, please upload some photos of yourself in your profile page first. Make sure to upload new photos to get Cloudinary URLs.",
           timestamp: new Date().toISOString(),
           suggestedProducts: [],
         }

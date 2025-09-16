@@ -1,8 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { products } from "@/data/products";
-import { generateTryOnImage as generateTryOnImageUtil } from "@/lib/image-generation";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+import { generateTryOnImage } from "@/lib/image-generation";
 
 export async function POST(req: Request) {
   const { productId, userImageUrl } = await req.json();
@@ -15,9 +12,10 @@ export async function POST(req: Request) {
   try {
     console.log(`Generating try-on for product: ${product.name}`);
     
-    // Use the centralized image generation utility
-    const result = await generateTryOnImageUtil({
+    // Use the centralized image generation utility with Cloudinary URL
+    const result = await generateTryOnImage({
       userImageUrl,
+      productImageUrl: product.images[0],
       productName: product.name,
       productDescription: product.description,
       category: product.category
