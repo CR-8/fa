@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { ProductCard } from "@/components/product-card"
 import { products } from "@/data/products"
 import { suggestions } from "@/data/suggestions"
-import { Sparkles, Shirt, ArrowRight, Construction } from "lucide-react"
+import { Sparkles, Shirt, ArrowRight, Construction, Star, Shield, Truck, RotateCcw } from "lucide-react"
 import Link from "next/link"
 
 export default function HomePage() {
@@ -18,106 +18,74 @@ export default function HomePage() {
     .slice(0, 6)
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="px-4 pt-8 pb-8">
-        {/* Increased bottom padding for better spacing */}
-        <Card className="bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
-          <CardContent className="p-8 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-primary/20 rounded-full">
-                <Sparkles className="h-10 w-10 text-primary" />
-              </div>
+      <section className="px-4 pt-8 pb-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-primary/10 rounded-full">
+              <Sparkles className="h-12 w-12 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold mb-4 text-balance text-neutral-900 dark:text-neutral-50">AI-Powered Fashion Assistant</h1>
-            <p className="text-neutral-600 dark:text-neutral-400 mb-6 text-pretty text-lg leading-relaxed">
-              Discover your perfect style with AI recommendations and virtual try-on technology
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button asChild size="lg" className="bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
-                <Link href="/ai-fa">Chat with AI-FA</Link>
-              </Button>
-              <Button variant="outline" asChild size="lg" className="border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300">
-                <Link href="/shop">Browse Shop</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            FashionAI
+          </h1>
+          <p className="text-muted-foreground mb-8 text-lg max-w-2xl mx-auto">
+            Discover your perfect style with AI-powered recommendations and virtual try-on technology.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg">
+              <Link href="/ai-fa" className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                AI Stylist
+              </Link>
+            </Button>
+            <Button variant="outline" asChild size="lg">
+              <Link href="/shop" className="flex items-center gap-2">
+                <Shirt className="h-5 w-5" />
+                Shop Now
+              </Link>
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* AI Suggestions Section */}
-      <section className="px-4 pb-8">
-        {/* Increased bottom padding */}
-        <div className="flex items-center justify-between mb-6">
-          {/* Increased margin bottom */}
-          <div className="flex items-center gap-3">
-            {/* Increased gap */}
-            <div className="p-2 bg-primary/10 rounded-lg">
-              {/* Added background container for icon */}
-              <Sparkles className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold">AI Suggestions</h2> {/* Increased font size and weight */}
+      <section className="px-4 pb-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Recommended for You</h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/ai-fa">
+                View All
+              </Link>
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" asChild className="text-primary hover:text-primary/80">
-            {/* Enhanced button styling */}
-            <Link href="/ai-fa" className="flex items-center gap-1">
-              More <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-        <p className="text-muted-foreground mb-6 text-lg leading-relaxed">{suggestions[0]?.reasoning}</p>{" "}
-        {/* Enhanced typography */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-          {/* Increased gap between cards */}
-          {suggestedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} showTryOn />
-          ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {suggestedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} showTryOn />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* New Arrivals Section */}
-      <section className="px-4 pb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              {/* Added background container with accent color */}
-              <Shirt className="h-6 w-6 text-accent" />
-            </div>
+      <section className="px-4 pb-12 bg-muted/20">
+        <div className="max-w-7xl mx-auto py-8">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">New Arrivals</h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/shop">
+                View All
+              </Link>
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" asChild className="text-primary hover:text-primary/80">
-            <Link href="/shop" className="flex items-center gap-1">
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {newArrivals.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-          {newArrivals.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      {/* Wardrobe Section */}
-      <section className="px-4 pb-8">
-        <Card className="border-dashed border-2 border-muted-foreground/30 shadow-sm">
-          {/* Added subtle shadow */}
-          <CardContent className="p-8 text-center">
-            {/* Increased padding */}
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-muted rounded-full">
-                <Construction className="h-10 w-10 text-muted-foreground" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold mb-3">Your Wardrobe</h3> {/* Enhanced typography */}
-            <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
-              Organize and manage your personal wardrobe collection
-            </p>
-            <Badge variant="secondary" className="text-sm px-4 py-2">
-              {/* Made badge larger */}🚧 Coming Soon
-            </Badge>
-          </CardContent>
-        </Card>
       </section>
     </div>
   )

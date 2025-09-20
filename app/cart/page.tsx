@@ -40,30 +40,57 @@ export default function CartPage() {
   const total = subtotal + shipping + tax
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <ShoppingCart className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">
-              Shopping Cart
-            </h1>
+            <div className="p-3 bg-primary/20 rounded-xl">
+              <ShoppingCart className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Shopping Cart
+              </h1>
+              <p className="text-muted-foreground">
+                {cartItems.length} {cartItems.length === 1 ? 'premium item' : 'premium items'} in your cart
+              </p>
+            </div>
           </div>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart
-          </p>
         </div>
+
+        {/* Trust Badges */}
+        <div className="flex flex-wrap justify-center gap-6 mb-8 p-4 bg-primary/5 rounded-lg border border-primary/10">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">✓</span>
+            </div>
+            Secure SSL Encryption
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">✓</span>
+            </div>
+            Free Shipping ₹999+
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">✓</span>
+            </div>
+            30-Day Returns
+          </div>
+        </div>
+
         {cartItems.length > 0 ? (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Cart Items */}
             <div className="xl:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <Card key={item.product.id} className="bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
+                <Card key={item.product.id} className="bg-card border-border/50 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row gap-4">
                       {/* Product Image */}
-                      <div className="relative h-32 w-full sm:h-24 sm:w-24 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-700 flex-shrink-0">
+                      <div className="relative h-32 w-full sm:h-24 sm:w-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         <Image
                           src={item.product.images[0]}
                           alt={item.product.name}
@@ -75,13 +102,13 @@ export default function CartPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-50 mb-1 line-clamp-2">
+                            <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
                               {item.product.name}
                             </h3>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                            <p className="text-sm text-muted-foreground mb-2">
                               {item.product.brand}
                             </p>
-                            <p className="text-lg font-bold text-neutral-900 dark:text-neutral-50">
+                            <p className="text-lg font-bold text-primary">
                               ₹{item.product.price.toLocaleString('en-IN')}
                             </p>
                           </div>
@@ -91,22 +118,22 @@ export default function CartPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeItem(item.product.id)}
-                              className="text-neutral-500 dark:text-neutral-400 p-1 order-2 sm:order-1"
+                              className="text-muted-foreground hover:text-destructive p-1"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
 
-                            <div className="flex items-center gap-2 order-1 sm:order-2">
+                            <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                className="h-8 w-8 p-0 border-neutral-300 dark:border-neutral-600"
+                                className="h-8 w-8 p-0 border-border hover:border-primary"
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
 
-                              <span className="w-8 text-center text-neutral-900 dark:text-neutral-50 font-medium">
+                              <span className="w-8 text-center text-foreground font-medium">
                                 {item.quantity}
                               </span>
 
@@ -114,13 +141,13 @@ export default function CartPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                className="h-8 w-8 p-0 border-neutral-300 dark:border-neutral-600"
+                                className="h-8 w-8 p-0 border-border hover:border-primary"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
 
-                            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 order-3">
+                            <p className="text-sm font-medium text-muted-foreground">
                               ₹{(item.product.price * item.quantity).toLocaleString('en-IN')}
                             </p>
                           </div>
@@ -131,47 +158,72 @@ export default function CartPage() {
                 </Card>
               ))}
             </div>
+
             {/* Order Summary - Sticky on larger screens */}
             <div className="space-y-6">
               <div className="sticky top-24">
-                <Card className="bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
+                <Card className="bg-card border-border/50 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-neutral-900 dark:text-neutral-50">Order Summary</CardTitle>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Order Summary
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                      <span>Subtotal</span>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal ({cartItems.length} items)</span>
                       <span>₹{subtotal.toLocaleString('en-IN')}</span>
                     </div>
 
-                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Shipping</span>
-                      <span>{shipping === 0 ? 'Free' : `₹${shipping.toLocaleString('en-IN')}`}</span>
+                      <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>
+                        {shipping === 0 ? 'Free' : `₹${shipping.toLocaleString('en-IN')}`}
+                      </span>
                     </div>
 
-                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                      <span>Tax</span>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Tax (GST)</span>
                       <span>₹{tax.toLocaleString('en-IN')}</span>
                     </div>
 
-                    <Separator className="bg-neutral-200 dark:bg-neutral-700" />
+                    <Separator className="bg-border" />
 
-                    <div className="flex justify-between text-lg font-bold text-neutral-900 dark:text-neutral-50">
+                    <div className="flex justify-between text-lg font-bold text-foreground">
                       <span>Total</span>
                       <span>₹{total.toLocaleString('en-IN')}</span>
                     </div>
+
+                    <div className="text-xs text-muted-foreground text-center">
+                      Inclusive of all taxes
+                    </div>
                   </CardContent>
                 </Card>
+
+                {/* Promo Code */}
+                <Card className="bg-card border-border/50 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-foreground">Have a promo code?</h4>
+                      <div className="flex gap-2">
+                        <Input placeholder="Enter code" className="flex-1" />
+                        <Button variant="outline" size="sm">Apply</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Checkout Button */}
-                <Button className="w-full bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Proceed to Checkout
+                <Button className="w-full h-12 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Proceed to Secure Checkout
                 </Button>
+
                 {/* Continue Shopping */}
                 <Button
                   variant="outline"
                   asChild
-                  className="w-full border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
+                  className="w-full h-12 border-border hover:bg-muted"
                 >
                   <Link href="/shop">Continue Shopping</Link>
                 </Button>
@@ -180,18 +232,18 @@ export default function CartPage() {
           </div>
         ) : (
           /* Empty Cart State */
-          <Card className="max-w-md mx-auto bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
+          <Card className="max-w-lg mx-auto bg-card border-border/50 shadow-sm">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
-                <ShoppingCart className="h-10 w-10 text-neutral-400 dark:text-neutral-500" />
+              <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-muted flex items-center justify-center">
+                <ShoppingCart className="h-10 w-10 text-muted-foreground" />
               </div>
-              <CardTitle className="text-neutral-900 dark:text-neutral-50">Your cart is empty</CardTitle>
+              <CardTitle className="text-foreground">Your cart is empty</CardTitle>
             </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-                Add some items to get started
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Discover premium fashion pieces and add them to your cart
               </p>
-              <Button asChild className="bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900">
+              <Button asChild className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
                 <Link href="/shop">Start Shopping</Link>
               </Button>
             </CardContent>

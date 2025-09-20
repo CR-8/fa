@@ -321,57 +321,6 @@ export default function AIFAPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10">
-      {/* Header */}
-      <Card className="rounded-none border-x-0 border-t-0 border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-                  <Bot className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-accent rounded-full"></div>
-              </div>
-              <div>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    AI Fashion Assistant
-                  </span>
-                  <Badge className="bg-accent/10 text-accent border-accent/20">
-                    <Zap className="w-3 h-3 mr-1" />
-                    Online
-                  </Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">Your personal stylist powered by AI</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-primary/20 text-primary">
-                <Heart className="w-3 h-3 mr-1" />
-                Trusted by 10K+ users
-              </Badge>
-              {userImages.length > 0 ? (
-                <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
-                  <ImageIcon className="w-3 h-3 mr-1" />
-                  Using {userImages.length} uploaded photo{userImages.length > 1 ? 's' : ''} from Cloudinary
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="border-orange-500/20 text-orange-600">
-                  <ImageIcon className="w-3 h-3 mr-1" />
-                  Upload photos for better recommendations
-                </Badge>
-              )}
-              
-              {/* Quota status badge */}
-              <Badge variant="outline" className="border-blue-500/20 text-blue-600">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
-                Enhanced Styling Mode
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 max-w-4xl mx-auto">

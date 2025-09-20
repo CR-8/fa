@@ -142,10 +142,10 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
   }
 
   return (
-    <Card className="group relative overflow-hidden border-border/50 bg-card">
-      <CardContent className="p-0">
+    <Card className="group relative overflow-hidden border-border/50 bg-card ">
+      <CardContent className="p-0 h-[50vh]">
         {/* Product Image */}
-        <div className="relative -mt-8 aspect-square overflow-hidden w-full">
+        <div className="relative h-[38vh] -mt-8 overflow-hidden w-full">
           <Link href={`/shop/${product.id}`}>
             <Image
               src={autoTryOnImage || product.images[0]}
@@ -162,17 +162,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
                   <span className="text-white text-xs font-medium">Generating try-on...</span>
                 </div>
               </div>
-            )}
-            
-            {/* Try-on badge */}
-            {autoTryOnImage && (
-              <div className="absolute top-3 left-3">
-                <Badge className="bg-primary text-white flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  Try-On
-                </Badge>
-              </div>
-            )}
+            )}          
           </Link>
 
           {/* Overlay with actions - Hidden on mobile, visible on desktop hover */}
@@ -186,44 +176,12 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
                 <Heart className="h-4 w-4" />
               </Button>
             </div>
-
-            <div className="absolute bottom-3 left-3 right-3">
-              <Button
-                size="sm"
-                className="w-full bg-primary text-white"
-                onClick={showTryOn ? handleTryOn : undefined}
-              >
-                {autoTryOnImage ? (
-                  <>
-                    <Camera className="h-4 w-4 mr-2" />
-                    View Try-On
-                  </>
-                ) : showTryOn ? (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Try On
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add to Cart
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
-
-          {/* Badges */}
-          {product.tags.includes("new") && (
-            <Badge className="absolute top-3 left-3 bg-accent text-white">
-              New
-            </Badge>
-          )}
         </div>
 
         {/* Product Info */}
-        <div className="p-3 space-y-2">
-          <div className="flex items-start justify-between">
+        <div className="p-4 space-y-4 space-x-1">
+          <div className="flex items-start justify-between h-[6vh]">
             <div className="flex-1 min-w-0">
               <Link href={`/shop/${product.id}`}>
                 <h3 className="font-semibold text-sm line-clamp-2">
@@ -243,7 +201,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
           </div>
 
           {/* Quick Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 py-4">
             <Button
               variant="outline"
               size="sm"
@@ -254,25 +212,6 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
                 View Details
               </Link>
             </Button>
-            {autoTryOnImage ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="px-3"
-                onClick={handleTryOn}
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            ) : showTryOn && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="px-3"
-                onClick={handleTryOn}
-              >
-                <Sparkles className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
       </CardContent>

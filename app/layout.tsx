@@ -4,6 +4,7 @@ import { Inter, Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { BottomNav } from "@/components/bottom-nav"
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense } from "react"
 import "./globals.css"
@@ -22,16 +23,61 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "FashionAI - Your AI Fashion Stylist",
-  description: "Discover your perfect style with AI-powered fashion recommendations and virtual try-on technology",
+  title: "FashionAI - Premium Fashion with AI Styling | Virtual Try-On",
+  description: "Discover premium fashion with AI-powered styling recommendations and virtual try-on technology. Shop curated collections from top brands with personalized fashion advice.",
   generator: "v0.app",
   manifest: "/manifest.json",
-  keywords: ["fashion", "AI", "stylist", "virtual try-on", "shopping"],
+  keywords: ["premium fashion", "AI stylist", "virtual try-on", "fashion e-commerce", "personalized shopping", "fashion recommendations"],
   authors: [{ name: "FashionAI Team" }],
+  creator: "FashionAI",
+  publisher: "FashionAI",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://fashionai.com'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: "FashionAI - Your AI Fashion Stylist",
-    description: "Discover your perfect style with AI-powered fashion recommendations",
+    title: "FashionAI - Premium Fashion with AI Styling",
+    description: "Discover premium fashion with AI-powered styling recommendations and virtual try-on technology",
+    url: "https://fashionai.com",
+    siteName: "FashionAI",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "FashionAI - Premium Fashion E-commerce",
+      },
+    ],
+    locale: "en_IN",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FashionAI - Premium Fashion with AI Styling",
+    description: "Discover premium fashion with AI-powered styling recommendations and virtual try-on technology",
+    images: ["/og-image.jpg"],
+    creator: "@fashionai",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'your-google-verification-code',
   },
 }
 
@@ -71,6 +117,7 @@ export default function RootLayout({
               </Suspense>
             </main>
             <BottomNav />
+            <Footer />
           </div>
           <Analytics />
         </ThemeProvider>
