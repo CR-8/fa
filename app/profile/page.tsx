@@ -30,9 +30,6 @@ export default function ProfilePage() {
       const storedImages = JSON.parse(localStorage.getItem('userUploadedImages') || '[]')
       const validImages = storedImages.filter((img: string) => img && img !== "/placeholder.svg" && isValidCloudinaryUrl(img))
       
-      console.log("🔍 Debug - Profile page localStorage images:", storedImages); // Debug log
-      console.log("🔍 Debug - Profile page valid Cloudinary images:", validImages); // Debug log
-      
       // If we have valid Cloudinary images, use them for poses, otherwise use defaults
       if (validImages.length > 0) {
         // Fill with Cloudinary images, then pad with placeholders if needed
@@ -43,7 +40,7 @@ export default function ProfilePage() {
         return poses.slice(0, 3) // Ensure exactly 3 poses
       }
     } catch (error) {
-      console.warn('Failed to parse localStorage in profile page:', error)
+      // Handle localStorage parsing error gracefully
     }
     
     return user.poses // Fall back to default poses
@@ -53,7 +50,6 @@ export default function ProfilePage() {
     name: user.name,
     email: user.email,
   })
-  const [showComingSoon, setShowComingSoon] = useState(false)
   const [avatar, setAvatar] = useState(user.avatar || "/placeholder.svg")
   const [poses, setPoses] = useState(user.poses) // Start with default poses
   const [uploading, setUploading] = useState<string | null>(null)
@@ -71,13 +67,7 @@ export default function ProfilePage() {
   }
 
   const handleSaveProfile = () => {
-    console.log("Profile saved:", formData)
     // In a real app, this would save to a backend
-  }
-
-  const handleWardrobeSetup = () => {
-    setShowComingSoon(true)
-    setTimeout(() => setShowComingSoon(false), 3000)
   }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +92,7 @@ export default function ProfilePage() {
       
       localStorage.setItem('userUploadedImages', JSON.stringify(validImages))
     } else {
-      console.error('Invalid Cloudinary URL received:', result?.url)
+      // Handle invalid URL gracefully
     }
     setUploading(null)
   }
@@ -124,7 +114,7 @@ export default function ProfilePage() {
       const validCloudinaryUrls = newPoses.filter(pose => pose !== "/placeholder.svg" && isValidCloudinaryUrl(pose))
       localStorage.setItem('userUploadedImages', JSON.stringify(validCloudinaryUrls))
     } else {
-      console.error('Invalid Cloudinary URL received:', result?.url)
+      // Handle invalid URL gracefully
     }
     setUploading(null)
   }
@@ -141,20 +131,21 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <Card className="rounded-none border-x-0 border-t-0">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <div className="p-2 bg-primary/20 rounded-full">
-              <User className="h-5 w-5 text-primary" />
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-primary/10 rounded-full">
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
-            Profile
-          </CardTitle>
-        </CardHeader>
-      </Card>
+            <h1 className="text-lg sm:text-xl font-semibold">Profile Settings</h1>
+          </div>
+        </div>
+      </div>
 
-      <div className="p-4 space-y-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-2xl">
+        <div className="space-y-4 sm:space-y-6">
         {/* User Setup Section */}
         <Card>
           <CardHeader>
@@ -164,101 +155,93 @@ export default function ProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Profile Avatar */}
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <div className={`w-24 h-24 rounded-full overflow-hidden border-4 transition-all duration-300 ${
-                  uploadSuccess === 'avatar'
-                    ? 'border-green-500 shadow-lg shadow-green-500/25'
-                    : 'border-primary/20'
-                }`}>
-                  <Image
-                    src={avatar}
-                    alt="Profile avatar"
-                    width={96}
-                    height={96}
-                    className="object-cover"
-                  />
-                  {/* Upload Overlay */}
-                  {uploading === 'avatar' && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
-                        <span className="text-white text-xs font-medium">Uploading...</span>
-                      </div>
-                    </div>
-                  )}
-                  {/* Success Overlay */}
-                  {uploadSuccess === 'avatar' && (
-                    <div className="absolute inset-0 bg-green-500/90 flex items-center justify-center animate-in fade-in duration-300">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="bg-white rounded-full p-2 animate-in zoom-in duration-300">
-                          <Check className="h-4 w-4 text-green-600" />
-                        </div>
-                        <span className="text-white text-xs font-medium">Uploaded!</span>
-                      </div>
-                    </div>
-                  )}
+        {/* Profile Avatar */}
+        <div className="flex flex-col items-center space-y-3 sm:space-y-4">
+          <div className="relative">
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 transition-all duration-200 ${
+              uploadSuccess === 'avatar'
+                ? 'border-green-500 shadow-md'
+                : 'border-muted-foreground/20'
+            }`}>
+              <Image
+                src={avatar}
+                alt="Profile avatar"
+                width={80}
+                height={80}
+                className="object-cover w-full h-full"
+              />
+              {uploading === 'avatar' && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
                 </div>
-                <Button
-                  size="sm"
-                  className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 transition-all duration-200 hover:scale-110"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading === 'avatar'}
-                >
-                  {uploading === 'avatar' ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                />
-              </div>
+              )}
+              {uploadSuccess === 'avatar' && (
+                <div className="absolute inset-0 bg-green-500/90 flex items-center justify-center">
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                </div>
+              )}
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 sm:w-7 sm:h-7 p-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading === 'avatar'}
+            >
+              <Camera className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground text-center">Click to change avatar</p>
+        </div>
 
-            {/* Form Fields */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="Enter your full name"
-                />
-              </div>
+            {/* Basic Information */}
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="sm:col-span-2">
+                  <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    placeholder="Enter your full name"
+                    className="mt-1"
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  placeholder="Enter your email"
-                />
+                <div className="sm:col-span-2">
+                  <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    placeholder="Enter your email"
+                    className="mt-1"
+                  />
+                </div>
               </div>
 
               {/* Upload 3 Images Section */}
               <div>
-                <Label>Upload Your Photos (3 poses)</Label>
-                <p className="text-sm text-muted-foreground mb-3">
+                <Label className="text-sm font-medium">Your Photos (3 poses)</Label>
+                <p className="text-xs text-muted-foreground mb-2 sm:mb-3">
                   Upload photos in different poses for better AI recommendations
                 </p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {poses.map((pose, index) => (
                     <div
                       key={index}
-                      className={`relative aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
+                      className={`relative aspect-square rounded-md sm:rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer ${
                         uploadSuccess === `pose-${index}`
-                          ? 'border-green-500 shadow-lg shadow-green-500/25'
-                          : 'border-dashed border-muted-foreground/30 hover:border-primary/50'
+                          ? 'border-green-500 shadow-md'
+                          : 'border-muted-foreground/20 hover:border-primary/50'
                       }`}
                       onClick={() => !uploading && document.getElementById(`pose-${index}`)?.click()}
                     >
@@ -269,52 +252,35 @@ export default function ProfilePage() {
                         className="object-cover"
                       />
 
-                      {/* Upload Overlay */}
                       {uploading === `pose-${index}` && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center animate-in fade-in duration-300">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="animate-spin rounded-full h-8 w-8 border-3 border-white border-t-transparent"></div>
-                            <span className="text-white text-sm font-medium">Uploading...</span>
-                          </div>
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
                         </div>
                       )}
 
-                      {/* Success Overlay */}
                       {uploadSuccess === `pose-${index}` && (
-                        <div className="absolute inset-0 bg-green-500/90 flex items-center justify-center animate-in fade-in duration-300">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="bg-white rounded-full p-3 animate-in zoom-in duration-300 delay-150">
-                              <Check className="h-5 w-5 text-green-600" />
-                            </div>
-                            <span className="text-white text-sm font-medium">Uploaded!</span>
-                          </div>
+                        <div className="absolute inset-0 bg-green-500/90 flex items-center justify-center">
+                          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                         </div>
                       )}
 
-                      {/* Hover Overlay for Empty State */}
                       {pose === "/placeholder.svg" && !uploading && uploadSuccess !== `pose-${index}` && (
                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="bg-white/90 rounded-full p-3">
-                              <Upload className="h-5 w-5 text-gray-600" />
-                            </div>
-                            <span className="text-white text-sm font-medium">Click to upload</span>
-                          </div>
+                          <Upload className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                         </div>
                       )}
 
-                      {/* Remove Button */}
                       {pose !== "/placeholder.svg" && !uploading && uploadSuccess !== `pose-${index}` && (
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="absolute top-2 right-2 rounded-full w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 rounded-full w-4 h-4 sm:w-5 sm:h-5 p-0 opacity-0 hover:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation()
                             removePose(index)
                           }}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                         </Button>
                       )}
 
@@ -332,68 +298,64 @@ export default function ProfilePage() {
 
               {/* Style Preferences */}
               <div>
-                <Label>Style Preferences</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <Label className="text-sm font-medium">Style Preferences</Label>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                   {user.preferences.styles.map((style) => (
-                    <Badge key={style} variant="secondary" className="capitalize">
+                    <Badge key={style} variant="secondary" className="text-xs capitalize px-2 py-1">
                       {style}
                     </Badge>
                   ))}
-                  <Button variant="outline" size="sm" className="h-6 text-xs bg-transparent">
-                    + Add Style
+                  <Button variant="outline" size="sm" className="h-6 text-xs px-2">
+                    + Add
                   </Button>
                 </div>
               </div>
 
-              {/* Sizes */}
+              {/* Size Information */}
               <div>
-                <Label>Size Information</Label>
-                <div className="grid grid-cols-3 gap-3 mt-2">
+                <Label className="text-sm font-medium">Size Information</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2 mt-2">
                   <div>
                     <Label className="text-xs text-muted-foreground">Top</Label>
-                    <Input value={user.preferences.sizes.top} readOnly className="text-center" />
+                    <Input value={user.preferences.sizes.top} readOnly className="text-center text-sm h-8 mt-1" />
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Bottom</Label>
-                    <Input value={user.preferences.sizes.bottom} readOnly className="text-center" />
+                    <Input value={user.preferences.sizes.bottom} readOnly className="text-center text-sm h-8 mt-1" />
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Shoes</Label>
-                    <Input value={user.preferences.sizes.shoes} readOnly className="text-center" />
+                    <Input value={user.preferences.sizes.shoes} readOnly className="text-center text-sm h-8 mt-1" />
                   </div>
                 </div>
               </div>
 
-              <Button onClick={handleSaveProfile} className="w-full">
+              <Button onClick={handleSaveProfile} className="w-full mt-6">
                 <Save className="h-4 w-4 mr-2" />
-                Save Profile
+                Save Changes
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Wardrobe Setup Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Construction className="h-5 w-5" />
-              Wardrobe Setup
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Organize and manage your personal wardrobe collection with AI-powered categorization
-            </p>
-            <Button onClick={handleWardrobeSetup} className="w-full" disabled={showComingSoon}>
-              {showComingSoon ? "🚧 Coming Soon" : "Setup My Wardrobe"}
-            </Button>
-            {showComingSoon && (
-              <p className="text-center text-sm text-muted-foreground mt-2">
-                This feature is currently under development
-              </p>
-            )}
+        {/* Wardrobe Setup - Coming Soon */}
+        <Card className="border-dashed">
+          <CardContent className="py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <Construction className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">Wardrobe Management</p>
+                  <p className="text-xs text-muted-foreground">Coming soon</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" disabled className="ml-2 flex-shrink-0">
+                Setup
+              </Button>
+            </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   )

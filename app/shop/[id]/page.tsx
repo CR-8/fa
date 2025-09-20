@@ -261,7 +261,31 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               </div>
             </div>
             
-                        {/* Additional Info */}
+                        {/* Action Buttons */}
+            <div className="space-y-3">
+              <Button className="w-full h-12 text-lg bg-white/95 text-black hover:bg-white/40 hover:to-accent/90 shadow-lg transition-all">
+                <ShoppingCart className="h-5 w-5 mr-2 text-black" />
+                Add to Cart
+              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-12 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                >
+                  <Heart className="h-4 w-4 mr-2" />
+                  Wishlist
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                >
+                  <Share className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </div>
+
+            {/* Additional Info */}
             <div className="space-y-3 pt-6 border-t">
               {[
                 { label: "Free shipping", icon: <Check className="h-4 w-4 text-green-500" /> },
