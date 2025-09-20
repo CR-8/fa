@@ -4,7 +4,7 @@ class RateLimiter {
   private maxRequests: number;
   private windowMs: number;
 
-  constructor(maxRequests: number = 5, windowMs: number = 60000) { // 5 requests per minute
+  constructor(maxRequests: number = 3, windowMs: number = 120000) { // 3 requests per 2 minutes (slower)
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }
@@ -32,7 +32,17 @@ class RateLimiter {
 
     return Math.max(0, timeUntilNext);
   }
+
+  // Get current request count for display
+  getCurrentRequestCount(): number {
+    const now = Date.now();
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    return this.requests.length;
+  }
 }
 
-// Export a singleton instance
+// Export a singleton instance with slower limits
 export const rateLimiter = new RateLimiter();
+
+// Separate rate limiter for try-on feature (even slower)
+export const tryOnRateLimiter = new RateLimiter(2, 180000); // 2 requests per 3 minutes

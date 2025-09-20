@@ -100,19 +100,29 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
     }
   });
 
-  const prompt = `Create a realistic try-on image showing this person wearing the ${productName}. 
+const prompt = `
+Realistic virtual try-on image of a person.
 
-INSTRUCTIONS:
-- Keep the person's face, body, pose, and background EXACTLY the same
-- Only replace their current clothing with the ${category} shown in the product image
-- Maintain natural lighting, shadows, and proportions
-- Ensure the clothing fits naturally on this person's body type
+Positive Prompt:
+- Keep the person's face, hair, skin tone, body shape, pose, and background completely unchanged
+- Replace only their current clothing with the ${category} from the product image of ${productName}
+- Perfect alignment: clothing must fit their body naturally with correct proportions
+- Realistic fabric texture, stitching, folds, and draping
+- Natural lighting, shadows, and reflections consistent with the original photo
+- Seamless blending, no visible edits
 - Professional fashion photography quality
-- Realistic fabric texture and draping
+- Full body image, high resolution
+- Photorealistic detail, ultra-sharp, studio-grade output
 
-The person should look natural wearing this ${category}, as if they actually put it on.
-
-IMPORTANT: Generate a new image that combines the person from the first image with the clothing from the second image. The output should be a single realistic photo.`;
+Negative Prompt:
+- Blurry, low-resolution, distorted, deformed
+- Extra limbs, extra fingers, broken body parts
+- Warped clothing, unnatural fit, misaligned proportions
+- Cartoonish, painted, CGI, or fake-looking
+- Overexposed, underexposed, inconsistent shadows
+- Cropped body or missing parts
+- Visible artifacts, watermarks, or overlays
+`;
 
   // Corrected request format - pass the content parts directly
   const requestParts = [

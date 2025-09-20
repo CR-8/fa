@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { ChatBubble } from "@/components/chat-bubble"
 import { chatHistory } from "@/data/chat"
 import { user } from "@/data/user"
-import { rateLimiter } from "@/lib/rate-limiter"
+import { rateLimiter, tryOnRateLimiter } from "@/lib/rate-limiter"
 import { Send, Sparkles, Bot, User, Zap, Heart, Image as ImageIcon } from "lucide-react"
 
 export default function AIFAPage() {
@@ -176,9 +176,9 @@ export default function AIFAPage() {
   }
 
   const handleTryOn = async (productId: string) => {
-    // Check rate limit
-    if (!rateLimiter.canMakeRequest()) {
-      const waitTime = Math.ceil(rateLimiter.getTimeUntilNextRequest() / 1000);
+    // Check rate limit for try-on feature
+    if (!tryOnRateLimiter.canMakeRequest()) {
+      const waitTime = Math.ceil(tryOnRateLimiter.getTimeUntilNextRequest() / 1000);
       const rateLimitMessage = {
         id: `m${messages.length + 1}`,
         sender: "ai" as const,
@@ -224,6 +224,9 @@ export default function AIFAPage() {
         suggestedProducts: [],
       }
       setMessages((prev) => [...prev, loadingMessage])
+
+      // Add delay to slow down API requests
+      await new Promise(resolve => setTimeout(resolve, 3000))
 
       const res = await fetch("/api/try-on", {
         method: "POST",

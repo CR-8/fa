@@ -121,7 +121,7 @@ export default function ShopPage() {
             {filteredProducts.map((product) => (
               <Link key={product.id} href={`/shop/${product.id}`}>
                 <div className={viewMode === "list" ? "flex gap-4" : ""}>
-                  <ProductCard product={product} showTryOn />
+                  <ProductCard product={product} />
                 </div>
               </Link>
             ))}
