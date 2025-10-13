@@ -20,8 +20,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="px-4 pt-8 pb-12">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* <section className="px-4 pt-8 pb-12">
+        <div className="max-w-7xl mx-auto text-center p-2 rounded-2xl border-2">
           <div className="flex justify-center mb-6">
             <div className="p-4 bg-primary/10 rounded-full">
               <Sparkles className="h-12 w-12 text-primary" />
@@ -47,6 +47,29 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
+        </div>
+      </section> */}
+            <section className="px-4 pt-8 pb-12">
+        <div className="max-w-7xl mx-auto text-center p-2 rounded-2xl border-2">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-primary/10 rounded-full">
+              <Sparkles className="h-12 w-12 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            Wardrobe
+          </h1>
+          <p className="text-muted-foreground mb-8 text-lg max-w-2xl mx-auto">
+            Discover your perfect style with AI-powered recommendations and virtual try-on technology from your own clothing set.
+          </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button variant="ghost" asChild size="lg">
+                <Link href="/wardrobe" className="flex items-center gap-2">
+                  <Shirt className="h-5 w-5" />
+                    Check out at Profile or by clicking on the shirt icon 
+                </Link>
+              </Button>
+          </div> 
         </div>
       </section>
 

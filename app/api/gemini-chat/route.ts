@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { products } from "@/data/products";
 import { formatAIResponse, extractProductRecommendations } from "@/lib/ai-response-formatter";
+import { responseCache } from "@/lib/cache";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
@@ -55,21 +56,90 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
 }
 
 export async function POST(req: Request) {
-  const { message, userImages } = await req.json();
+  const { message, userImages, quizAnswers } = await req.json();
+
+  // Input validation
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    return new Response(JSON.stringify({
+      reply: "Please provide a valid message for fashion advice.",
+      products: []
+    }), { status: 400 });
+  }
+
+  if (message.length > 1000) {
+    return new Response(JSON.stringify({
+      reply: "Message is too long. Please keep it under 1000 characters.",
+      products: []
+    }), { status: 400 });
+  }
+
+  // Sanitize message
+  const sanitizedMessage = message.trim().replace(/[<>]/g, '');
+
+  // Validate userImages
+  if (userImages && !Array.isArray(userImages)) {
+    return new Response(JSON.stringify({
+      reply: "Invalid image data format.",
+      products: []
+    }), { status: 400 });
+  }
+
+  const validUserImages = userImages ? userImages.filter((img: any) =>
+    typeof img === 'string' &&
+    img.length > 0 &&
+    (img.startsWith('http') || img.startsWith('https')) &&
+    img.includes('cloudinary.com')
+  ).slice(0, 3) : []; // Limit to 3 images
+
+  // Validate quizAnswers
+  let validQuizAnswers = {};
+  if (quizAnswers && typeof quizAnswers === 'object') {
+    validQuizAnswers = Object.fromEntries(
+      Object.entries(quizAnswers).filter(([key, value]) =>
+        typeof key === 'string' &&
+        typeof value === 'string' &&
+        key.length < 50 &&
+        value.length < 100
+      )
+    );
+  }
+
+  // Create cache key from request parameters
+  const cacheKey = JSON.stringify({
+    message: sanitizedMessage.toLowerCase().trim(),
+    userImages: validUserImages.sort(),
+    quizAnswers: validQuizAnswers
+  });
+
+  // Check cache first
+  const cachedResponse = responseCache.get(cacheKey);
+  if (cachedResponse) {
+    console.log("✅ Cache hit for AI response");
+    return new Response(JSON.stringify(cachedResponse), { status: 200 });
+  }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // Create a prompt that includes product information
     const productInfo = products.map((p, index) =>
       `Product ${index + 1}: ${p.name} - ${p.description} - Category: ${p.category} - Price: ₹${p.price} - Tags: ${p.tags.join(', ')}`
     ).join('\n');
 
+    // Include user's style preferences from quiz if available
+    let stylePreferences = '';
+    if (quizAnswers && Object.keys(quizAnswers).length > 0) {
+      stylePreferences = `\n\nUser's Style Preferences (from style quiz):
+${Object.entries(quizAnswers).map(([category, answer]) => `- ${category}: ${answer}`).join('\n')}
+
+Please tailor your recommendations to match these preferences!`;
+    }
+
     const prompt = `
-You are a professional fashion expert and stylist. Based on the user's query: "${message}", provide personalized fashion recommendations.
+You are a professional fashion expert and stylist. Based on the user's query: "${sanitizedMessage}", provide personalized fashion recommendations.
 
 Available products (with Product IDs):
-${productInfo}
+${productInfo}${stylePreferences}
 
 Guidelines:
 - Respond in a conversational, helpful tone
@@ -78,6 +148,7 @@ Guidelines:
 - Give styling tips and outfit combinations
 - Keep responses engaging and professional
 - Focus on practical advice
+- If style preferences are provided, incorporate them into your recommendations
 
 IMPORTANT FORMATTING RULES:
 - Use **bold** for product names and key points
@@ -103,8 +174,8 @@ Suggested Product IDs: 1, 2
     let contentParts: any[] = [{ text: prompt }];
 
     // Include user images if provided
-    if (userImages && userImages.length > 0) {
-      for (const imageUrl of userImages) {
+    if (validUserImages && validUserImages.length > 0) {
+      for (const imageUrl of validUserImages) {
         try {
           let imageData: string;
           let mimeType: string;
@@ -138,7 +209,7 @@ Suggested Product IDs: 1, 2
     }
 
     const result = await retryWithBackoff(async () => {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       return await model.generateContent({
         contents: [{
           role: "user",
@@ -179,10 +250,15 @@ Suggested Product IDs: 1, 2
       ...mentionedProducts
     ])];
 
-    return new Response(JSON.stringify({
+    const responseData = {
       reply: formattedResponse.message,
       products: allSuggestedProducts
-    }), { status: 200 });
+    };
+
+    // Cache the response for 5 minutes
+    responseCache.set(cacheKey, responseData);
+
+    return new Response(JSON.stringify(responseData), { status: 200 });
   } catch (error: any) {
     console.error("Gemini API error:", error);
 

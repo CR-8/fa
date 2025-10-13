@@ -17,6 +17,7 @@ export default function AIFAPage() {
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [userImages, setUserImages] = useState<string[]>([])
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})
 
   // Helper function to validate Cloudinary URLs
   const isValidCloudinaryUrl = (url: string): boolean => {
@@ -38,6 +39,17 @@ export default function AIFAPage() {
         setUserImages(filteredImages)
       } catch (error) {
         console.warn('Failed to parse saved user images:', error)
+      }
+    }
+
+    // Load quiz answers
+    const savedQuiz = localStorage.getItem('styleQuizAnswers')
+    if (savedQuiz) {
+      try {
+        const parsedQuiz = JSON.parse(savedQuiz)
+        setQuizAnswers(parsedQuiz)
+      } catch (error) {
+        console.warn('Failed to parse quiz answers:', error)
       }
     }
 
@@ -124,7 +136,8 @@ export default function AIFAPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: inputValue,
-          userImages: userImages.filter(img => img && img !== "/placeholder.svg")
+          userImages: userImages.filter(img => img && img !== "/placeholder.svg"),
+          quizAnswers: Object.keys(quizAnswers).length > 0 ? quizAnswers : undefined
         })
       })
 

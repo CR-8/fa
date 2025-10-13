@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { user } from "@/data/user"
-import { User, Camera, Settings, Construction, Save, Upload, X, Check } from "lucide-react"
+import { User, Camera, Settings, Construction, Save, Upload, X, Check, Download, Upload as UploadIcon, Sparkles, Ruler } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import { uploadImage } from "@/lib/upload"
+import { supabase } from "@/lib/supabase"
 
 export default function ProfilePage() {
   // Helper function to validate Cloudinary URLs
@@ -50,31 +52,166 @@ export default function ProfilePage() {
     name: user.name,
     email: user.email,
   })
+  const [measurements, setMeasurements] = useState({
+    height: '',
+    shoeSize: '',
+    chest: '',
+    waist: '',
+    hips: ''
+  })
   const [avatar, setAvatar] = useState(user.avatar || "/placeholder.svg")
   const [poses, setPoses] = useState(user.poses) // Start with default poses
   const [uploading, setUploading] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Initialize poses from localStorage after component mounts
+  // Validation function for uploaded files
+  const validateFile = (file: File): string | null => {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+    if (file.size > maxSize) {
+      return 'File size must be less than 5MB';
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      return 'Please upload a valid image file (JPEG, PNG, WebP, or GIF)';
+    }
+
+    return null;
+  }
+
+  // Initialize poses and measurements after component mounts
   useEffect(() => {
     const initialPoses = getInitialPoses()
     setPoses(initialPoses)
+
+    // Load measurements from Supabase
+    const loadMeasurements = async () => {
+      try {
+        const userId = 'user-1' // TODO: Get from auth
+
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('height, shoe_size, measurements')
+          .eq('user_id', userId)
+          .single()
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          console.error('Error loading measurements:', error)
+          // Fallback to localStorage
+          const savedMeasurements = localStorage.getItem('userMeasurements')
+          if (savedMeasurements) {
+            try {
+              const parsed = JSON.parse(savedMeasurements)
+              setMeasurements(parsed)
+            } catch (error) {
+              console.warn('Failed to parse saved measurements:', error)
+            }
+          }
+        } else if (data) {
+          // Load from database
+          setMeasurements({
+            height: data.height || '',
+            shoeSize: data.shoe_size || '',
+            chest: data.measurements?.chest || '',
+            waist: data.measurements?.waist || '',
+            hips: data.measurements?.hips || ''
+          })
+          // Update localStorage as backup
+          localStorage.setItem('userMeasurements', JSON.stringify({
+            height: data.height || '',
+            shoeSize: data.shoe_size || '',
+            chest: data.measurements?.chest || '',
+            waist: data.measurements?.waist || '',
+            hips: data.measurements?.hips || ''
+          }))
+        } else {
+          // No data in database, try localStorage
+          const savedMeasurements = localStorage.getItem('userMeasurements')
+          if (savedMeasurements) {
+            try {
+              const parsed = JSON.parse(savedMeasurements)
+              setMeasurements(parsed)
+            } catch (error) {
+              console.warn('Failed to parse saved measurements:', error)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading measurements:', error)
+        // Fallback to localStorage
+        const savedMeasurements = localStorage.getItem('userMeasurements')
+        if (savedMeasurements) {
+          try {
+            const parsed = JSON.parse(savedMeasurements)
+            setMeasurements(parsed)
+          } catch (error) {
+            console.warn('Failed to parse saved measurements:', error)
+          }
+        }
+      }
+    }
+
+    loadMeasurements()
   }, [])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSaveProfile = () => {
-    // In a real app, this would save to a backend
+  const handleMeasurementChange = (field: string, value: string) => {
+    setMeasurements((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSaveProfile = async () => {
+    try {
+      const userId = 'user-1' // TODO: Get from auth
+
+      // Save measurements to Supabase
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: userId,
+          height: measurements.height,
+          shoe_size: measurements.shoeSize,
+          measurements: {
+            chest: measurements.chest,
+            waist: measurements.waist,
+            hips: measurements.hips
+          }
+        })
+
+      if (error) {
+        console.error('Error saving profile to database:', error)
+        // Fallback to localStorage
+        localStorage.setItem('userMeasurements', JSON.stringify(measurements))
+      } else {
+        // Update localStorage as backup
+        localStorage.setItem('userMeasurements', JSON.stringify(measurements))
+        console.log('Profile saved successfully!')
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      // Fallback to localStorage
+      localStorage.setItem('userMeasurements', JSON.stringify(measurements))
+    }
   }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
+    const validationError = validateFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      setTimeout(() => setUploadError(null), 5000);
+      return;
+    }
+
     setUploading('avatar')
+    setUploadError(null)
     const result = await uploadImage(file)
     if (result && result.url && isValidCloudinaryUrl(result.url)) {
       setAvatar(result.url)
@@ -92,7 +229,8 @@ export default function ProfilePage() {
       
       localStorage.setItem('userUploadedImages', JSON.stringify(validImages))
     } else {
-      // Handle invalid URL gracefully
+      setUploadError('Failed to upload image. Please try again.');
+      setTimeout(() => setUploadError(null), 5000);
     }
     setUploading(null)
   }
@@ -101,7 +239,15 @@ export default function ProfilePage() {
     const file = event.target.files?.[0]
     if (!file) return
 
+    const validationError = validateFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      setTimeout(() => setUploadError(null), 5000);
+      return;
+    }
+
     setUploading(`pose-${index}`)
+    setUploadError(null)
     const result = await uploadImage(file)
     if (result && result.url && isValidCloudinaryUrl(result.url)) {
       const newPoses = [...poses]
@@ -114,7 +260,8 @@ export default function ProfilePage() {
       const validCloudinaryUrls = newPoses.filter(pose => pose !== "/placeholder.svg" && isValidCloudinaryUrl(pose))
       localStorage.setItem('userUploadedImages', JSON.stringify(validCloudinaryUrls))
     } else {
-      // Handle invalid URL gracefully
+      setUploadError('Failed to upload image. Please try again.');
+      setTimeout(() => setUploadError(null), 5000);
     }
     setUploading(null)
   }
@@ -128,6 +275,62 @@ export default function ProfilePage() {
     // Update localStorage with remaining valid Cloudinary URLs
     const validCloudinaryUrls = newPoses.filter(pose => pose !== "/placeholder.svg" && isValidCloudinaryUrl(pose))
     localStorage.setItem('userUploadedImages', JSON.stringify(validCloudinaryUrls))
+  }
+
+  const exportUserData = () => {
+    const userData = {
+      name: formData.name,
+      email: formData.email,
+      avatar,
+      poses,
+      uploadedImages: JSON.parse(localStorage.getItem('userUploadedImages') || '[]'),
+      preferences: user.preferences,
+      exportedAt: new Date().toISOString()
+    }
+
+    const dataStr = JSON.stringify(userData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'fashion-ai-profile.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const importUserData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const userData = JSON.parse(e.target?.result as string)
+        
+        // Validate the data structure
+        if (userData.name && userData.email && userData.avatar && userData.poses) {
+          setFormData({ name: userData.name, email: userData.email })
+          setAvatar(userData.avatar)
+          setPoses(userData.poses)
+          
+          if (userData.uploadedImages) {
+            localStorage.setItem('userUploadedImages', JSON.stringify(userData.uploadedImages))
+          }
+          
+          setUploadSuccess('import')
+          setTimeout(() => setUploadSuccess(null), 3000)
+        } else {
+          setUploadError('Invalid file format')
+          setTimeout(() => setUploadError(null), 5000)
+        }
+      } catch (error) {
+        setUploadError('Failed to import data')
+        setTimeout(() => setUploadError(null), 5000)
+      }
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -199,6 +402,9 @@ export default function ProfilePage() {
             />
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground text-center">Click to change avatar</p>
+          {uploadError && (
+            <p className="text-xs text-red-500 text-center mt-1">{uploadError}</p>
+          )}
         </div>
 
             {/* Basic Information */}
@@ -313,19 +519,55 @@ export default function ProfilePage() {
 
               {/* Size Information */}
               <div>
-                <Label className="text-sm font-medium">Size Information</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2 mt-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Ruler className="h-4 w-4" />
+                  Body Measurements
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Top</Label>
-                    <Input value={user.preferences.sizes.top} readOnly className="text-center text-sm h-8 mt-1" />
+                    <Label className="text-xs text-muted-foreground">Height (cm)</Label>
+                    <Input
+                      value={measurements.height}
+                      onChange={(e) => handleMeasurementChange('height', e.target.value)}
+                      placeholder="170"
+                      className="text-center text-sm h-8 mt-1"
+                    />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Bottom</Label>
-                    <Input value={user.preferences.sizes.bottom} readOnly className="text-center text-sm h-8 mt-1" />
+                    <Label className="text-xs text-muted-foreground">Shoe Size</Label>
+                    <Input
+                      value={measurements.shoeSize}
+                      onChange={(e) => handleMeasurementChange('shoeSize', e.target.value)}
+                      placeholder="8"
+                      className="text-center text-sm h-8 mt-1"
+                    />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Shoes</Label>
-                    <Input value={user.preferences.sizes.shoes} readOnly className="text-center text-sm h-8 mt-1" />
+                    <Label className="text-xs text-muted-foreground">Chest (inches)</Label>
+                    <Input
+                      value={measurements.chest}
+                      onChange={(e) => handleMeasurementChange('chest', e.target.value)}
+                      placeholder="38"
+                      className="text-center text-sm h-8 mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Waist (inches)</Label>
+                    <Input
+                      value={measurements.waist}
+                      onChange={(e) => handleMeasurementChange('waist', e.target.value)}
+                      placeholder="32"
+                      className="text-center text-sm h-8 mt-1"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label className="text-xs text-muted-foreground">Hips (inches)</Label>
+                    <Input
+                      value={measurements.hips}
+                      onChange={(e) => handleMeasurementChange('hips', e.target.value)}
+                      placeholder="36"
+                      className="text-center text-sm h-8 mt-1"
+                    />
                   </div>
                 </div>
               </div>
@@ -334,23 +576,71 @@ export default function ProfilePage() {
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
+
+              {/* Data Management */}
+              <div className="border-t pt-4 mt-4">
+                <Label className="text-sm font-medium">Data Management</Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Export your profile data for backup or import from a previous backup
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={exportUserData} variant="outline" size="sm" className="flex-1">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Data
+                  </Button>
+                  <div className="relative">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => document.getElementById('import-input')?.click()}>
+                      <UploadIcon className="h-4 w-4 mr-2" />
+                      Import Data
+                    </Button>
+                    <input
+                      id="import-input"
+                      type="file"
+                      accept=".json"
+                      onChange={importUserData}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                {uploadSuccess === 'import' && (
+                  <p className="text-xs text-green-600 mt-2">Data imported successfully!</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Wardrobe Setup - Coming Soon */}
-        <Card className="border-dashed">
+        {/* Wardrobe */}
+        <Card>
           <CardContent className="py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <Construction className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                <Construction className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">Wardrobe Management</p>
-                  <p className="text-xs text-muted-foreground">Coming soon</p>
+                  <p className="font-medium text-sm truncate">My Wardrobe</p>
+                  <p className="text-xs text-muted-foreground">Manage your clothing collection</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" disabled className="ml-2 flex-shrink-0">
-                Setup
+              <Button variant="outline" size="sm" className="ml-2 flex-shrink-0" asChild>
+                <Link href="/wardrobe">View Wardrobe</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Style Quiz */}
+        <Card>
+          <CardContent className="py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">Style Quiz</p>
+                  <p className="text-xs text-muted-foreground">Take our quiz to get personalized recommendations</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="ml-2 flex-shrink-0" asChild>
+                <Link href="/style-quiz">Take Quiz</Link>
               </Button>
             </div>
           </CardContent>

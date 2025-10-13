@@ -1,6 +1,33 @@
 import { products } from "@/data/products";
 import { generateTryOnImage } from "@/lib/image-generation";
 
+// Retry utility function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      // Only retry on rate limit or service unavailable errors
+      if (error.status === 429 || error.status === 503) {
+        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
+        console.log(`Retrying in ${delay}ms... (attempt ${attempt + 1}/${maxRetries + 1})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 export async function POST(req: Request) {
   const { productId, userImageUrl } = await req.json();
 
@@ -12,13 +39,15 @@ export async function POST(req: Request) {
   try {
     console.log(`Generating try-on for product: ${product.name}`);
     
-    // Use the centralized image generation utility with Cloudinary URL
-    const result = await generateTryOnImage({
-      userImageUrl,
-      productImageUrl: product.images[0],
-      productName: product.name,
-      productDescription: product.description,
-      category: product.category
+    // Use the centralized image generation utility with Cloudinary URL and retries
+    const result = await retryWithBackoff(async () => {
+      return await generateTryOnImage({
+        userImageUrl,
+        productImageUrl: product.images[0],
+        productName: product.name,
+        productDescription: product.description,
+        category: product.category
+      });
     });
 
     // Prepare response based on result

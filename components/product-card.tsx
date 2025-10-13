@@ -142,11 +142,11 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
   }
 
   return (
-    <Card className="group relative overflow-hidden border-border/50 bg-card ">
+    <Card className="group relative overflow-hidden border-border/50 bg-card" role="article" aria-labelledby={`product-${product.id}-title`}>
       <CardContent className="p-0 h-[50vh]">
         {/* Product Image */}
         <div className="relative h-[38vh] -mt-8 overflow-hidden w-full">
-          <Link href={`/shop/${product.id}`}>
+          <Link href={`/shop/${product.id}`} aria-label={`View details for ${product.name}`}>
             <Image
               src={autoTryOnImage || product.images[0]}
               alt={autoTryOnImage ? `Try-on preview: ${product.name}` : product.name}
@@ -156,9 +156,9 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
             
             {/* Loading overlay for auto try-on */}
             {isGeneratingAutoTryOn && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center" aria-live="polite">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" aria-hidden="true"></div>
                   <span className="text-white text-xs font-medium">Generating try-on...</span>
                 </div>
               </div>
@@ -172,6 +172,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
                 size="sm"
                 variant="secondary"
                 className="h-8 w-8 p-0 bg-white text-black"
+                aria-label={`Add ${product.name} to wishlist`}
               >
                 <Heart className="h-4 w-4" />
               </Button>
@@ -184,17 +185,17 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
           <div className="flex items-start justify-between h-[6vh]">
             <div className="flex-1 min-w-0">
               <Link href={`/shop/${product.id}`}>
-                <h3 className="font-semibold text-sm line-clamp-2">
+                <h3 id={`product-${product.id}-title`} className="font-semibold text-sm line-clamp-2">
                   {product.name}
                 </h3>
               </Link>
               <p className="text-xs text-muted-foreground mt-1">{product.brand}</p>
             </div>
             <div className="flex flex-col items-end ml-2">
-              <span className="font-bold text-base text-neutral-900 dark:text-neutral-50">
+              <span className="font-bold text-base text-neutral-900 dark:text-neutral-50" aria-label={`Price: ₹${product.price.toLocaleString('en-IN')}`}>
                 ₹{product.price.toLocaleString('en-IN')}
               </span>
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="text-xs text-muted-foreground line-through" aria-label="Original price before discount">
                 ₹{(product.price * 1.2).toLocaleString('en-IN')}
               </span>
             </div>

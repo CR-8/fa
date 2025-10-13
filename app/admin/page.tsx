@@ -10,9 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { newProductTemplate } from "@/data/chat"
-import { categories } from "@/data/products"
-import { Upload, Plus, X, Save } from "lucide-react"
+import { products, categories } from "@/data/products"
+import { Upload, Plus, X, Save, BarChart3, Users, ShoppingBag, TrendingUp } from "lucide-react"
+
+const newProductTemplate = {
+  name: "",
+  price: "",
+  brand: "",
+  category: "",
+  description: "",
+  images: [] as string[],
+  tryOnPreview: "",
+}
 
 export default function AdminPage() {
   const [productData, setProductData] = useState(newProductTemplate)
@@ -74,17 +83,67 @@ export default function AdminPage() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
             <div className="p-2 bg-primary/20 rounded-full">
-              <Upload className="h-5 w-5 text-primary" />
+              <BarChart3 className="h-5 w-5 text-primary" />
             </div>
-            Admin - Product Upload
+            Admin Dashboard
           </CardTitle>
         </CardHeader>
       </Card>
 
+      {/* Analytics Cards */}
       <div className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                  <ShoppingBag className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Products</p>
+                  <p className="text-2xl font-bold">{products.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-full">
+                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Users</p>
+                  <p className="text-2xl font-bold">
+                    {typeof window !== 'undefined' && localStorage.getItem('userUploadedImages') ? '1' : '0'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-full">
+                  <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Categories</p>
+                  <p className="text-2xl font-bold">{categories.filter(c => c.id !== 'all').length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle>Add New Product</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Product Management
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

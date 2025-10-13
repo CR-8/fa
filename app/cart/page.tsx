@@ -214,9 +214,11 @@ export default function CartPage() {
                 </Card>
 
                 {/* Checkout Button */}
-                <Button className="w-full h-12 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Proceed to Secure Checkout
+                <Button className="w-full h-12 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg" asChild>
+                  <Link href="/checkout">
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Proceed to Secure Checkout
+                  </Link>
                 </Button>
 
                 {/* Continue Shopping */}

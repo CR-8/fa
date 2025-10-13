@@ -8,7 +8,6 @@ import { ArrowLeft, Heart, Share, ShoppingCart, Sparkles, Camera, X, Star, Check
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Skeleton } from "@/components/ui/skeleton"
 
 interface ProductDetailPageProps {
   params: {
@@ -117,7 +116,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <div className="max-w-6xl  mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Images Section */}
-          <div className="space-y-4 ">
+          <div className="space-y-4">
             {/* Virtual Try-On Card */}
             <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 shadow-lg">
               <CardHeader className="pb-3">
