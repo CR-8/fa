@@ -52,6 +52,7 @@ Return ONLY valid JSON with the following exact schema:
     {
       "title": string,              // short vibe name, e.g., "Casual Chic"
       "items": [
+        { "id": string, "name": string, "category": string },
         { "id": string, "name": string, "category": string }
       ],
       "why": string                 // 1-2 sentences explaining color/style harmony
@@ -61,8 +62,10 @@ Return ONLY valid JSON with the following exact schema:
 
 Rules:
 - Provide exactly 3 recommendations when possible. If the wardrobe is too small, provide as many as possible (at least 1).
+- Each recommendation should include 2-4 complementary items from different categories (e.g., shirt + pants, or dress + shoes).
 - Always reference items by id that exist in the provided list.
 - Keep explanations concise and practical.
+- Focus on creating cohesive, wearable outfits for the specified occasion.
 `
 }
 
@@ -162,7 +165,7 @@ export async function POST(request: NextRequest) {
           items: (rec.items || [])
             .filter(it => it && typeof it.id === 'string' && validIds.has(it.id))
             .map(it => ({ id: it.id, name: it.name?.toString() || '', category: it.category?.toString() || '' }))
-            .slice(1, 10) // keep 1-10 items; accidental long lists trimmed
+            .slice(0, 10) // keep up to 10 items; accidental long lists trimmed
         }))
         .filter(r => r.items.length > 0)
     }

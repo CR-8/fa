@@ -65,7 +65,7 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
   }
 }
 
-// Generate try-on image using Gemini 2.0 Flash Exp (correct model for image generation)
+// Generate try-on image using Gemini 1.5 Pro (more stable for image generation)
 async function generateWithGemini(options: ImageGenerationOptions): Promise<string> {
   if (!genAI) {
     throw new Error("Google AI not initialized - check your API key");
@@ -87,7 +87,7 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
   const userImageResult = await fetchImageAsBase64(userImageUrl);
   const productImageResult = await fetchImageAsBase64(productImageUrl);
 
-  // Use the correct model for image generation - gemini-2.5-flash with proper config
+  // Use Gemini 1.5 Pro which has better image generation support
   const model = genAI.getGenerativeModel({ 
     model: "gemini-2.5-flash",
     generationConfig: {
@@ -100,27 +100,17 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
   });
 
 const prompt = `
-Realistic virtual try-on image of a person.
+Create a realistic virtual try-on image showing a person wearing clothing.
 
-Positive Prompt:
-- Keep the person's face, hair, skin tone, body shape, pose, and background completely unchanged
-- Replace only their current clothing with the ${category} from the product image of ${productName}
-- Perfect alignment: clothing must fit their body naturally with correct proportions
-- Realistic fabric texture, stitching, folds, and draping
-- Natural lighting, shadows, and reflections consistent with the original photo
-- Seamless blending, no visible edits
-- Professional fashion photography quality
-- Full body image, high resolution
-- Photorealistic detail, ultra-sharp, studio-grade output
+INSTRUCTIONS:
+- Take the person from the first image and the clothing from the second image
+- Replace the person's current clothing with the ${category} from the product image
+- Keep the person's face, hair, skin tone, body shape, pose, and background exactly the same
+- Make the clothing fit naturally with proper proportions and realistic fabric appearance
+- Ensure perfect alignment and seamless blending
+- Create a photorealistic result with professional quality
 
-Negative Prompt:
-- Blurry, low-resolution, distorted, deformed
-- Extra limbs, extra fingers, broken body parts
-- Warped clothing, unnatural fit, misaligned proportions
-- Cartoonish, painted, CGI, or fake-looking
-- Overexposed, underexposed, inconsistent shadows
-- Cropped body or missing parts
-- Visible artifacts, watermarks, or overlays
+The result should be a single image showing the person wearing the new clothing item.
 `;
 
   // Corrected request format - pass the content parts directly
@@ -141,7 +131,7 @@ Negative Prompt:
   ];
 
   console.log(`📤 Sending request to Gemini API:`, {
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-1.5-pro",
     promptLength: prompt.length,
     userImageSize: `${Math.round(userImageResult.data.length / 1024)}KB`,
     productImageSize: `${Math.round(productImageResult.data.length / 1024)}KB`,
@@ -266,7 +256,7 @@ export async function generateTryOnImage(options: ImageGenerationOptions): Promi
       success: true,
       imageUrl,
       description: `Here's how ${productName} looks on you! Our AI has created a realistic try-on showing the perfect fit and style for your body type.`,
-      provider: "Gemini 2.0 Flash Exp",
+      provider: "Gemini 1.5 Pro",
       usedFallback: false
     };
 

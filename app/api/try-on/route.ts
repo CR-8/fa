@@ -29,38 +29,38 @@ async function retryWithBackoff<T>(
 }
 
 export async function POST(req: Request) {
-  const { productId, userImageUrl } = await req.json();
+  const { personImage, clothingImage, category } = await req.json();
 
-  const product = products.find(p => p.id === productId);
-  if (!product) {
-    return new Response(JSON.stringify({ error: "Product not found" }), { status: 404 });
+  // Validate required fields
+  if (!personImage || !clothingImage) {
+    return new Response(JSON.stringify({ error: "Person image and clothing image are required" }), { status: 400 });
   }
 
   try {
-    console.log(`Generating try-on for product: ${product.name}`);
-    
-    // Use the centralized image generation utility with Cloudinary URL and retries
+    console.log(`Generating try-on for wardrobe item with category: ${category}`);
+
+    // Use the centralized image generation utility with wardrobe item data
     const result = await retryWithBackoff(async () => {
       return await generateTryOnImage({
-        userImageUrl,
-        productImageUrl: product.images[0],
-        productName: product.name,
-        productDescription: product.description,
-        category: product.category
+        userImageUrl: personImage,
+        productImageUrl: clothingImage,
+        productName: `Wardrobe ${category}`,
+        productDescription: `A ${category} item from your wardrobe`,
+        category: category || 'clothing'
       });
     });
 
     // Prepare response based on result
     const response = {
       description: result.description,
-      productName: product.name,
-      productImage: product.images[0],
-      userImage: userImageUrl,
+      productName: `Wardrobe ${category}`,
+      productImage: clothingImage,
+      userImage: personImage,
       generatedImage: result.imageUrl || null,
       success: result.success,
       usedFallback: result.usedFallback,
       provider: result.provider,
-      message: result.usedFallback ? 
+      message: result.usedFallback ?
         "Using enhanced styling recommendations. For AI-generated images, try again later when quota resets!" :
         "AI-generated try-on image created successfully!"
     };
@@ -72,10 +72,10 @@ export async function POST(req: Request) {
 
     // Ultimate fallback
     return new Response(JSON.stringify({
-      description: `This ${product.name} would be a fantastic addition to your wardrobe! Our fashion experts believe it would suit your style perfectly.`,
-      productName: product.name,
-      productImage: product.images[0],
-      userImage: userImageUrl,
+      description: `This wardrobe ${category} would be a fantastic addition to your outfit! Our fashion experts believe it would suit your style perfectly.`,
+      productName: `Wardrobe ${category}`,
+      productImage: clothingImage,
+      userImage: personImage,
       generatedImage: null,
       success: true,
       usedFallback: true,

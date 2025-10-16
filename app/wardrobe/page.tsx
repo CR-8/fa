@@ -225,6 +225,32 @@ export default function WardrobePage() {
     setGeneratingTryOn(prev => ({ ...prev, [outfitKey]: true }))
 
     try {
+      // Get user photos from localStorage (same logic as profile page)
+      const getUserPhotos = () => {
+        try {
+          const storedImages = JSON.parse(localStorage.getItem('userUploadedImages') || '[]')
+          const validImages = storedImages.filter((img: string) => 
+            img && 
+            img !== "/placeholder.svg" && 
+            img.includes('cloudinary.com') && 
+            (img.startsWith('http://') || img.startsWith('https://'))
+          )
+          return validImages
+        } catch (error) {
+          return []
+        }
+      }
+
+      const userPhotos = getUserPhotos()
+
+      if (userPhotos.length === 0) {
+        alert('Please upload some photos of yourself in your profile first to use the try-on feature!')
+        return
+      }
+
+      // Use the first available user photo
+      const personImageUrl = userPhotos[0]
+
       // Get the actual wardrobe items
       const items = outfitItems.map(it => wardrobeItems.find(w => w.id === it.id)).filter(Boolean)
 
@@ -234,12 +260,12 @@ export default function WardrobePage() {
       // In a real implementation, you'd combine multiple items or use a more sophisticated approach
       const clothingImageUrl = items[0].image_url
 
-      // Generate try-on with user's photo (placeholder - you'd need user's photo)
+      // Generate try-on with user's actual photo
       const response = await fetch('/api/try-on', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personImage: 'https://via.placeholder.com/400x600?text=User+Photo', // TODO: Use actual user photo
+          personImage: personImageUrl,
           clothingImage: clothingImageUrl,
           category: items[0].category
         })
@@ -251,6 +277,7 @@ export default function WardrobePage() {
       setTryOnImages(prev => ({ ...prev, [outfitKey]: data.imageUrl }))
     } catch (error) {
       console.error('Try-on generation error:', error)
+      alert('Failed to generate try-on. Please try again.')
     } finally {
       setGeneratingTryOn(prev => ({ ...prev, [outfitKey]: false }))
     }
