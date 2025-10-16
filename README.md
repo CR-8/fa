@@ -1,3 +1,37 @@
+# Fashion Assistant
+
+## AI Wardrobe: Outfit Recommendations
+
+This feature lets users upload wardrobe items, have them auto-tagged by AI, and request outfit combinations for a given occasion.
+
+Key pieces:
+- Upload: `POST /api/upload` (uploads to Cloudinary)
+- Clothing analysis: `POST /api/analyze-clothing` (Gemini image+text prompt, stores metadata client-side and in Supabase)
+- Outfit recommendations: `POST /api/wardrobe-recommendations` (Gemini text prompt using your stored wardrobe items)
+- UI: `app/wardrobe/page.tsx`
+
+Environment variables required:
+- GOOGLE_API_KEY
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY (server-side route optional fallback for RLS/testing)
+- CLOUDINARY_CLOUD_NAME
+- CLOUDINARY_API_KEY
+- CLOUDINARY_API_SECRET
+
+Database:
+- Table `wardrobe_items` with RLS policies is defined in `supabase-migrations.sql`.
+
+Usage flow:
+1. Go to Wardrobe page and add items (image upload + optional details). The item is analyzed by AI and saved to Supabase.
+2. Enter an occasion like “party” and hit “Get AI Outfits”.
+3. The page shows 1–3 outfit combinations using your stored items with short explanations.
+
+Notes:
+- Frontend requests are rate-limited client-side for stability.
+- The AI route tries `gemini-2.0-flash` and falls back to `gemini-pro` automatically.
+- Replace the placeholder `user-1` with your authenticated user ID when wiring auth.
+
 # FashionAI - AI-Powered Fashion Assistant
 
 A modern e-commerce platform with AI-powered virtual try-on and personalized styling recommendations.

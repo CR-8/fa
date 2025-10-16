@@ -11,37 +11,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image URL is required' }, { status: 400 })
     }
 
-    // Get the image data from Cloudinary URL
+    // Fetch image
     const imageResponse = await fetch(imageUrl)
-    if (!imageResponse.ok) {
-      throw new Error('Failed to fetch image')
-    }
-
+    if (!imageResponse.ok) throw new Error('Failed to fetch image')
     const imageBuffer = await imageResponse.arrayBuffer()
     const base64Image = Buffer.from(imageBuffer).toString('base64')
+    const mimeType = imageUrl.endsWith('.png') ? 'image/png' : 'image/jpeg'
 
-    // Determine MIME type from URL
-    const mimeType = imageUrl.includes('.jpg') || imageUrl.includes('.jpeg')
-      ? 'image/jpeg'
-      : imageUrl.includes('.png')
-      ? 'image/png'
-      : 'image/jpeg'
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+    const prompt = `Analyze this clothing item and provide the following information in a simple format:
 
-    const prompt = `Analyze this clothing item and provide detailed metadata. Include:
-- Type of clothing (shirt, pants, dress, etc.)
-- Color(s)
-- Style/occasion (casual, formal, business, etc.)
-- Material/fabric if visible
-- Pattern (solid, striped, patterned, etc.)
-- Fit (loose, fitted, slim, etc.)
-- Any notable features or details
+Type: [shirt, pants, dress, etc.]
+Color: [main color]
+Style: [casual, formal, business, etc.]
+Material: [cotton, wool, etc.]
+Pattern: [solid, striped, etc.]
+Fit: [loose, fitted, etc.]
+Features: [any notable details]
 
 Additional context: ${description || 'No additional description provided'}
 
-Return the analysis as a JSON object with these fields: type, colors, style, material, pattern, fit, features, confidence_score (0-1)`
+Please respond with just the field names and values, one per line.`
 
+    // Correct format for Gemini API with vision
     const result = await model.generateContent([
       prompt,
       {
@@ -55,41 +48,46 @@ Return the analysis as a JSON object with these fields: type, colors, style, mat
     const response = await result.response
     const text = response.text()
 
-    // Try to parse the JSON response
-    try {
-      const metadata = JSON.parse(text)
-      return NextResponse.json({ metadata })
-    } catch (parseError) {
-      // If JSON parsing fails, create a structured response from the text
-      const fallbackMetadata = {
-        type: extractFromText(text, 'type'),
-        colors: extractFromText(text, 'color'),
-        style: extractFromText(text, 'style'),
-        material: extractFromText(text, 'material'),
-        pattern: extractFromText(text, 'pattern'),
-        fit: extractFromText(text, 'fit'),
-        features: extractFromText(text, 'features'),
-        confidence_score: 0.8
-      }
-      return NextResponse.json({ metadata: fallbackMetadata })
+    console.log('Gemini API response:', text) // Debug log
+
+    // Since we're asking for simple text format, use fallback parsing
+    const fallbackMetadata = {
+      type: extractFromText(text, 'type'),
+      colors: extractFromText(text, 'color'),
+      style: extractFromText(text, 'style'),
+      material: extractFromText(text, 'material'),
+      pattern: extractFromText(text, 'pattern'),
+      fit: extractFromText(text, 'fit'),
+      features: extractFromText(text, 'features'),
+      confidence_score: 0.8
     }
+    console.log('Parsed metadata:', fallbackMetadata) // Debug log
+    return NextResponse.json({ metadata: fallbackMetadata })
 
   } catch (error) {
     console.error('Clothing analysis error:', error)
-    return NextResponse.json(
-      { error: 'Failed to analyze clothing item' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to analyze clothing item' }, { status: 500 })
   }
 }
 
 function extractFromText(text: string, field: string): string {
-  const lowerText = text.toLowerCase()
-  const fieldIndex = lowerText.indexOf(field + ':')
-  if (fieldIndex !== -1) {
-    const start = fieldIndex + field.length + 1
-    const end = lowerText.indexOf('\n', start)
-    return text.substring(start, end !== -1 ? end : text.length).trim()
+  const lines = text.split('\n')
+  const fieldLower = field.toLowerCase()
+
+  for (const line of lines) {
+    const lineLower = line.toLowerCase().trim()
+    if (lineLower.startsWith(fieldLower + ':')) {
+      const value = line.substring(line.indexOf(':') + 1).trim()
+      return value || 'Unknown'
+    }
   }
+
+  // Fallback search
+  const regex = new RegExp(`${fieldLower}\\s*:\\s*([^\\n\\r]+)`, 'i')
+  const match = text.match(regex)
+  if (match) {
+    return match[1].trim()
+  }
+
   return 'Unknown'
 }

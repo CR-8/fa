@@ -87,16 +87,15 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
   const userImageResult = await fetchImageAsBase64(userImageUrl);
   const productImageResult = await fetchImageAsBase64(productImageUrl);
 
-  // Use the correct model for image generation - gemini-2.0-flash-exp with proper config
+  // Use the correct model for image generation - gemini-2.5-flash with proper config
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.5-flash",
     generationConfig: {
       maxOutputTokens: 8192,
       temperature: 0.4,
       topP: 0.95,
       topK: 20,
-      candidateCount: 1,
-      responseModalities: ["text", "image"]
+      candidateCount: 1
     }
   });
 

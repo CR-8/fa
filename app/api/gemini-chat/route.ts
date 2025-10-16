@@ -8,8 +8,8 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 // Retry utility function with exponential backoff
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
+  maxRetries: number = 2, // Reduced from 3 to 2
+  baseDelay: number = 1500 // Slightly increased base delay
 ): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -119,7 +119,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Use gemini-2.0-flash-exp for all requests (supports both text and vision)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     // Create a prompt that includes product information
     const productInfo = products.map((p, index) =>
@@ -209,7 +210,7 @@ Suggested Product IDs: 1, 2
     }
 
     const result = await retryWithBackoff(async () => {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
       return await model.generateContent({
         contents: [{
           role: "user",

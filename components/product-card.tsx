@@ -49,48 +49,42 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
     }
   }, [])
 
-  // Auto-generate try-on image when user images are available (with rate limiting)
-  useEffect(() => {
-    if (userImages.length > 0 && !autoTryOnImage && !isGeneratingAutoTryOn) {
-      // Check rate limit before auto-generating
-      if (tryOnRateLimiter.canMakeRequest()) {
-        generateAutoTryOn()
-      } else {
-        console.log("Rate limit reached for auto try-on generation")
-      }
-    }
-  }, [userImages, autoTryOnImage, isGeneratingAutoTryOn])
+  // DISABLED: Auto-generate try-on on shop page to prevent API quota exhaustion
+  // Try-on images are now only generated on the individual product detail page
+  // useEffect(() => {
+  //   if (userImages.length > 0 && !autoTryOnImage && !isGeneratingAutoTryOn) {
+  //     if (tryOnRateLimiter.canMakeRequest()) {
+  //       generateAutoTryOn()
+  //     } else {
+  //       console.log("Rate limit reached for auto try-on generation")
+  //     }
+  //   }
+  // }, [userImages, autoTryOnImage, isGeneratingAutoTryOn])
 
-  const generateAutoTryOn = async () => {
-    if (userImages.length === 0 || isGeneratingAutoTryOn) return
-
-    setIsGeneratingAutoTryOn(true)
-
-    try {
-      // Add a small delay to further slow down requests
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const response = await fetch("/api/try-on", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          userImageUrl: userImages[0] // Use first uploaded image
-        })
-      })
-
-      const data = await response.json()
-
-      if (data.success && data.generatedImage) {
-        setAutoTryOnImage(data.generatedImage)
-      }
-    } catch (error) {
-      console.error("Auto try-on error:", error)
-      // Silently fail - will show regular product image
-    } finally {
-      setIsGeneratingAutoTryOn(false)
-    }
-  }
+  // DISABLED: Auto try-on generation function - only used on product detail page now
+  // const generateAutoTryOn = async () => {
+  //   if (userImages.length === 0 || isGeneratingAutoTryOn) return
+  //   setIsGeneratingAutoTryOn(true)
+  //   try {
+  //     await new Promise(resolve => setTimeout(resolve, 2000))
+  //     const response = await fetch("/api/try-on", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         productId: product.id,
+  //         userImageUrl: userImages[0]
+  //       })
+  //     })
+  //     const data = await response.json()
+  //     if (data.success && data.generatedImage) {
+  //       setAutoTryOnImage(data.generatedImage)
+  //     }
+  //   } catch (error) {
+  //     console.error("Auto try-on error:", error)
+  //   } finally {
+  //     setIsGeneratingAutoTryOn(false)
+  //   }
+  // }
 
   const handleTryOn = async (e: React.MouseEvent) => {
     e.preventDefault() // Prevent navigation to product page

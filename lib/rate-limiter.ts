@@ -44,5 +44,7 @@ class RateLimiter {
 // Export a singleton instance with slower limits
 export const rateLimiter = new RateLimiter();
 
-// Separate rate limiter for try-on feature (even slower)
-export const tryOnRateLimiter = new RateLimiter(2, 180000); // 2 requests per 3 minutes
+// Separate rate limiter for try-on feature
+// RELAXED: Since we now prevent duplicate calls at component level,
+// this is just a safety net for the entire session
+export const tryOnRateLimiter = new RateLimiter(10, 300000); // 10 requests per 5 minutes
