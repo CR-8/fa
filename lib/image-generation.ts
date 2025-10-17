@@ -1,9 +1,8 @@
-// Image generation utilities with multiple providers
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface ImageGenerationOptions {
-  userImageUrl: string;
-  productImageUrl: string; // Cloudinary URL for the product
+  userImageUrls: string[]; // Changed to array for multiple user images
+  productImageUrls: string[]; // Changed to array for multiple product images
   productName: string;
   productDescription: string;
   category: string;
@@ -16,6 +15,10 @@ interface ImageGenerationResult {
   provider?: string;
   usedFallback: boolean;
   error?: string;
+  imagesUsed?: {
+    userImages: number;
+    productImages: number;
+  };
 }
 
 // Initialize with proper error handling
@@ -65,84 +68,124 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
   }
 }
 
-// Generate try-on image using Gemini 1.5 Pro (more stable for image generation)
+// Helper function to fetch multiple images concurrently
+async function fetchMultipleImages(urls: string[]): Promise<Array<{ data: string; mimeType: string }>> {
+  console.log(`📦 Fetching ${urls.length} images...`);
+  const results = await Promise.all(urls.map(url => fetchImageAsBase64(url)));
+  console.log(`✅ Successfully fetched all ${results.length} images`);
+  return results;
+}
+
+// Generate try-on image using Gemini 2.0 Flash Exp with multiple images
 async function generateWithGemini(options: ImageGenerationOptions): Promise<string> {
   if (!genAI) {
     throw new Error("Google AI not initialized - check your API key");
   }
 
-  const { userImageUrl, productImageUrl, productName, productDescription, category } = options;
+  const { userImageUrls, productImageUrls, productName, productDescription, category } = options;
 
   console.log(`🎨 Starting Gemini generation for product: ${productName}`);
   console.log(`📋 Options:`, {
-    userImageUrl,
-    productImageUrl,
+    userImageCount: userImageUrls.length,
+    productImageCount: productImageUrls.length,
     productName,
     productDescription,
     category,
     hasAPIKey: !!process.env.GOOGLE_API_KEY
   });
 
-  // Fetch both user image and product image using the provided URLs
-  const userImageResult = await fetchImageAsBase64(userImageUrl);
-  const productImageResult = await fetchImageAsBase64(productImageUrl);
+  // Fetch all user images and product images
+  const userImageResults = await fetchMultipleImages(userImageUrls);
+  const productImageResults = await fetchMultipleImages(productImageUrls);
 
-  // Use Gemini 1.5 Pro which has better image generation support
+  // Use the correct model for image generation
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
+    model: "gemini-2.0-flash-exp",
     generationConfig: {
       maxOutputTokens: 8192,
       temperature: 0.4,
       topP: 0.95,
       topK: 20,
-      candidateCount: 1
+      candidateCount: 1,
+      responseModalities: ["text", "image"]
     }
   });
 
-const prompt = `
-Create a realistic virtual try-on image showing a person wearing clothing.
+  // Enhanced prompt that references multiple images
+  const prompt = `
+You are given ${userImageUrls.length} reference image(s) of a person and ${productImageUrls.length} image(s) of a ${category} product (${productName}).
 
-INSTRUCTIONS:
-- Take the person from the first image and the clothing from the second image
-- Replace the person's current clothing with the ${category} from the product image
-- Keep the person's face, hair, skin tone, body shape, pose, and background exactly the same
-- Make the clothing fit naturally with proper proportions and realistic fabric appearance
-- Ensure perfect alignment and seamless blending
-- Create a photorealistic result with professional quality
+Task: Create a realistic virtual try-on image showing the person wearing the product.
 
-The result should be a single image showing the person wearing the new clothing item.
+Instructions for User Images (${userImageUrls.length} image${userImageUrls.length > 1 ? 's' : ''}):
+- Analyze ALL provided user images to understand: body type, proportions, skin tone, posture, and style preferences
+- Use the best-quality or most suitable user image as the base for the try-on
+- Maintain consistency with the person's appearance across all reference images
+
+Instructions for Product Images (${productImageUrls.length} image${productImageUrls.length > 1 ? 's' : ''}):
+- Analyze ALL product images to understand: design details, fabric texture, color accuracy, and fit characteristics
+- Capture details from multiple angles if multiple product images are provided
+- Ensure accurate representation of patterns, logos, stitching, and material properties
+
+Positive Prompt:
+- Keep the person's face, hair, skin tone, body shape, pose, and background completely unchanged
+- Replace only their current clothing with the ${category} from the product images
+- Perfect alignment: clothing must fit their body naturally with correct proportions based on body analysis
+- Realistic fabric texture, stitching, folds, and draping matching the product images
+- Natural lighting, shadows, and reflections consistent with the original photo
+- Seamless blending, no visible edits
+- Professional fashion photography quality
+- Full body image, high resolution
+- Photorealistic detail, ultra-sharp, studio-grade output
+- If multiple product views are available, synthesize them for the most accurate representation
+
+Negative Prompt:
+- Blurry, low-resolution, distorted, deformed
+- Extra limbs, extra fingers, broken body parts
+- Warped clothing, unnatural fit, misaligned proportions
+- Cartoonish, painted, CGI, or fake-looking
+- Overexposed, underexposed, inconsistent shadows
+- Cropped body or missing parts
+- Visible artifacts, watermarks, or overlays
+- Mixing features from different product images incorrectly
 `;
 
-  // Corrected request format - pass the content parts directly
-  const requestParts = [
-    { text: prompt },
-    { 
+  // Build the request parts array with all images
+  const requestParts: any[] = [{ text: prompt }];
+  
+  // Add all user images
+  console.log(`📸 Adding ${userImageResults.length} user images to request`);
+  userImageResults.forEach((img, idx) => {
+    requestParts.push({
       inlineData: { 
-        mimeType: userImageResult.mimeType, 
-        data: userImageResult.data 
-      } 
-    },
-    { 
+        mimeType: img.mimeType, 
+        data: img.data 
+      }
+    });
+  });
+  
+  // Add all product images
+  console.log(`👕 Adding ${productImageResults.length} product images to request`);
+  productImageResults.forEach((img, idx) => {
+    requestParts.push({
       inlineData: { 
-        mimeType: productImageResult.mimeType, 
-        data: productImageResult.data 
-      } 
-    }
-  ];
+        mimeType: img.mimeType, 
+        data: img.data 
+      }
+    });
+  });
 
   console.log(`📤 Sending request to Gemini API:`, {
-    model: "gemini-1.5-pro",
+    model: "gemini-2.0-flash-exp",
     promptLength: prompt.length,
-    userImageSize: `${Math.round(userImageResult.data.length / 1024)}KB`,
-    productImageSize: `${Math.round(productImageResult.data.length / 1024)}KB`,
-    userImageType: userImageResult.mimeType,
-    productImageType: productImageResult.mimeType,
+    totalImages: userImageResults.length + productImageResults.length,
+    userImages: userImageResults.length,
+    productImages: productImageResults.length,
     partsCount: requestParts.length,
     responseModalities: ["text", "image"]
   });
 
   try {
-    // Pass the parts array directly
     const response = await model.generateContent(requestParts);
     
     console.log(`📥 Received Gemini response:`, {
@@ -179,19 +222,6 @@ The result should be a single image showing the person wearing the new clothing 
       throw new Error("Model returned text instead of image - this model may not support image generation");
     }
 
-    // Log the full response structure for debugging
-    console.log("🔍 Full response structure:", JSON.stringify({
-      candidates: response.response.candidates?.map(c => ({
-        content: c.content?.parts?.map(p => ({ 
-          text: p.text ? `${p.text.substring(0, 100)}...` : undefined,
-          hasInlineData: !!p.inlineData,
-          inlineDataType: p.inlineData?.mimeType
-        })),
-        finishReason: c.finishReason,
-        safetyRatings: c.safetyRatings
-      }))
-    }, null, 2));
-
     throw new Error("No image generated in Gemini response");
 
   } catch (error: any) {
@@ -199,21 +229,14 @@ The result should be a single image showing the person wearing the new clothing 
       message: error.message,
       status: error.status,
       code: error.code,
-      details: error.details,
-      cause: error.cause,
-      stack: error.stack?.split('\n').slice(0, 5)
+      details: error.details
     });
-
-    // Log the full error object for debugging
-    if (error.status === 429) {
-      console.error("🚫 Quota exceeded - Full error:", JSON.stringify(error, null, 2));
-    }
 
     throw error;
   }
 }
 
-// Fallback descriptions for when image generation fails
+// Fallback descriptions
 const fallbackDescriptions = {
   "p1": "This classic white tee would create a perfect casual look on you! The clean lines and soft cotton fabric would drape beautifully, highlighting your natural style while providing ultimate comfort for any occasion.",
   "p2": "These blue denim jeans would complement your body type exceptionally well! The medium wash and slim-fit design would create a modern, versatile look that pairs perfectly with your existing wardrobe.",
@@ -224,64 +247,89 @@ const fallbackDescriptions = {
 };
 
 export async function generateTryOnImage(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
-  const { productName, category } = options;
+  const { productName, category, userImageUrls, productImageUrls } = options;
   
   console.log(`🚀 Starting try-on generation for: ${productName}`);
   console.log(`📊 Environment check:`, {
     hasGoogleAPIKey: !!process.env.GOOGLE_API_KEY,
     apiKeyPrefix: process.env.GOOGLE_API_KEY?.substring(0, 10) + "...",
     nodeEnv: process.env.NODE_ENV,
-    userImageUrl: options.userImageUrl
+    userImageCount: userImageUrls?.length || 0,
+    productImageCount: productImageUrls?.length || 0
   });
 
-  // Check if we have a valid user image URL
-  if (!options.userImageUrl || options.userImageUrl === "/placeholder.svg") {
-    console.log("⚠️ No valid user image provided");
+  // Validate user images (handle undefined/null)
+  const validUserImages = (userImageUrls || []).filter(url => url && url !== "/placeholder.svg");
+  if (validUserImages.length === 0) {
+    console.log("⚠️ No valid user images provided");
     return {
       success: false,
       description: `To see yourself wearing ${productName}, please upload some photos in your profile page first! Once you do, our AI will create a personalized try-on image just for you.`,
       usedFallback: true,
-      error: "No user image provided"
+      error: "No user images provided",
+      imagesUsed: { userImages: 0, productImages: productImageUrls?.length || 0 }
     };
   }
 
-  // Try the actual API generation
+  // Validate product images (handle undefined/null)
+  const validProductImages = (productImageUrls || []).filter(url => url && url !== "/placeholder.svg");
+  if (validProductImages.length === 0) {
+    console.log("⚠️ No valid product images provided");
+    return {
+      success: false,
+      description: `No product images available for ${productName}. Please ensure product images are properly configured.`,
+      usedFallback: true,
+      error: "No product images provided",
+      imagesUsed: { userImages: validUserImages.length, productImages: 0 }
+    };
+  }
+
+  // Try the actual API generation with validated images
   try {
-    console.log("🎯 Attempting Gemini generation...");
+    console.log(`🎯 Attempting Gemini generation with ${validUserImages.length} user image(s) and ${validProductImages.length} product image(s)...`);
     
-    const imageUrl = await generateWithGemini(options);
+    const imageUrl = await generateWithGemini({
+      ...options,
+      userImageUrls: validUserImages,
+      productImageUrls: validProductImages
+    });
     
     console.log("✅ Gemini generation successful!");
+    const imageCountMsg = validUserImages.length > 1 || validProductImages.length > 1
+      ? ` Our AI analyzed ${validUserImages.length} photo${validUserImages.length > 1 ? 's' : ''} of you and ${validProductImages.length} product image${validProductImages.length > 1 ? 's' : ''} for maximum accuracy.`
+      : '';
+    
     return {
       success: true,
       imageUrl,
-      description: `Here's how ${productName} looks on you! Our AI has created a realistic try-on showing the perfect fit and style for your body type.`,
-      provider: "Gemini 1.5 Pro",
-      usedFallback: false
+      description: `Here's how ${productName} looks on you!${imageCountMsg} The result shows a realistic try-on with perfect fit and style for your body type.`,
+      provider: "Gemini 2.0 Flash Exp",
+      usedFallback: false,
+      imagesUsed: {
+        userImages: validUserImages.length,
+        productImages: validProductImages.length
+      }
     };
 
   } catch (error: any) {
     console.error("❌ Gemini generation failed:", error);
     
-    // Check if it's a quota/rate limit error
+    // Error handling (same as before)
     const isQuotaError = error.status === 429 || 
                         error.code === 429 ||
                         error.message?.includes('quota') || 
                         error.message?.includes('limit') ||
                         error.message?.includes('429');
     
-    // Check if it's an API key issue
     const isAuthError = error.status === 401 || 
                        error.status === 403 ||
                        error.message?.includes('API key') ||
                        error.message?.includes('authentication');
 
-    // Check if it's a model capability issue
     const isModelError = error.message?.includes('not support') ||
                         error.message?.includes('model') ||
                         error.message?.includes('image generation');
 
-    // Use enhanced fallback description with styling advice
     const productId = Object.keys(fallbackDescriptions).find(id => 
       fallbackDescriptions[id as keyof typeof fallbackDescriptions].toLowerCase().includes(category.toLowerCase())
     ) || "p1";
@@ -289,7 +337,6 @@ export async function generateTryOnImage(options: ImageGenerationOptions): Promi
     const baseDescription = fallbackDescriptions[productId as keyof typeof fallbackDescriptions] ||
       `This ${productName} would look fantastic on you! The ${category} style would perfectly complement your personal aesthetic and enhance your overall look.`;
 
-    // Add styling advice based on product category
     let stylingAdvice = "";
     switch(category.toLowerCase()) {
       case "tops":
@@ -311,31 +358,29 @@ export async function generateTryOnImage(options: ImageGenerationOptions): Promi
     let errorMessage = "";
     if (isQuotaError) {
       errorMessage = "\n\n💡 **Quota Issue**: You've exceeded the free tier limits. Consider upgrading to a paid plan for unlimited AI try-on images!";
-      console.log("🔄 Recommendation: Upgrade to paid tier or wait for quota reset");
     } else if (isAuthError) {
       errorMessage = "\n\n🔑 **API Key Issue**: Please check your Google AI API key configuration.";
-      console.log("🔧 Recommendation: Verify API key is valid and has proper permissions");
     } else if (isModelError) {
       errorMessage = "\n\n🤖 **Model Limitation**: The current AI model doesn't support image generation. We're working on alternatives!";
-      console.log("🔧 Recommendation: Try a different AI provider or wait for model updates");
     } else {
       errorMessage = "\n\n⚙️ **Technical Issue**: AI image generation temporarily unavailable.";
     }
 
-    console.log(`💡 Using fallback description with advice`);
     return {
-      success: true, // Still success, just using fallback
-      description: `${baseDescription}${stylingAdvice}\n\n✨ *Professional styling recommendation based on your uploaded photos and fashion expertise*${errorMessage}`,
+      success: true,
+      description: `${baseDescription}${stylingAdvice}\n\n✨ *Professional styling recommendation based on your ${validUserImages.length} uploaded photo${validUserImages.length > 1 ? 's' : ''} and fashion expertise*${errorMessage}`,
       usedFallback: true,
       provider: "Enhanced Fashion Advisor",
-      error: isQuotaError ? "API quota exceeded" : isAuthError ? "Authentication error" : isModelError ? "Model limitation" : error.message
+      error: isQuotaError ? "API quota exceeded" : isAuthError ? "Authentication error" : isModelError ? "Model limitation" : error.message,
+      imagesUsed: {
+        userImages: validUserImages.length,
+        productImages: validProductImages.length
+      }
     };
   }
 }
 
-// Alternative: Use a different approach with text-to-image if image-to-image fails
+// Alternative generation method
 export async function generateTryOnImageAlternative(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
-  // This would use a text-to-image model to generate based on descriptions
-  // For now, just return the fallback
   return generateTryOnImage(options);
 }

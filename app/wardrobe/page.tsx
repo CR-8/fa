@@ -29,6 +29,7 @@ export default function WardrobePage() {
     recommendations: { title: string; items: { id: string; name: string; category: string }[]; why: string }[]
   } | null>(null)
   const [tryOnImages, setTryOnImages] = useState<{[key: string]: string}>({})
+  const [tryOnDescriptions, setTryOnDescriptions] = useState<{[key: string]: string}>({})
   const [generatingTryOn, setGeneratingTryOn] = useState<{[key: string]: boolean}>({})
   const [errorMsg, setErrorMsg] = useState<string>("")
 
@@ -222,6 +223,7 @@ export default function WardrobePage() {
 
   const generateOutfitTryOn = async (recIndex: number, outfitItems: { id: string; name: string; category: string }[]) => {
     const outfitKey = `rec-${recIndex}`
+    console.log('🎬 Starting try-on generation for outfit:', outfitKey)
     setGeneratingTryOn(prev => ({ ...prev, [outfitKey]: true }))
 
     try {
@@ -248,25 +250,27 @@ export default function WardrobePage() {
         return
       }
 
-      // Use the first available user photo
-      const personImageUrl = userPhotos[0]
-
       // Get the actual wardrobe items
       const items = outfitItems.map(it => wardrobeItems.find(w => w.id === it.id)).filter(Boolean)
 
       if (items.length === 0) return
 
-      // For now, use the first item as the clothing image
-      // In a real implementation, you'd combine multiple items or use a more sophisticated approach
-      const clothingImageUrl = items[0].image_url
+      // Collect ALL images from ALL wardrobe items in the outfit
+      const clothingImages = items.map(item => item.image_url).filter(Boolean)
 
-      // Generate try-on with user's actual photo
+      console.log('📸 Try-on generation with:', {
+        userPhotos: userPhotos.length,
+        outfitItems: items.length,
+        clothingImages: clothingImages.length
+      })
+
+      // Generate try-on with ALL user photos and ALL clothing images for best accuracy
       const response = await fetch('/api/try-on', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personImage: personImageUrl,
-          clothingImage: clothingImageUrl,
+          personImages: userPhotos, // Pass all user photos
+          clothingImages: clothingImages, // Pass all clothing images from outfit
           category: items[0].category
         })
       })
@@ -274,7 +278,26 @@ export default function WardrobePage() {
       if (!response.ok) throw new Error('Failed to generate try-on')
 
       const data = await response.json()
-      setTryOnImages(prev => ({ ...prev, [outfitKey]: data.imageUrl }))
+      console.log('📦 Try-on response:', { success: data.success, hasImage: !!data.generatedImage, outfitKey })
+      
+      // Store both the generated image (if available) and description
+      if (data.generatedImage) {
+        setTryOnImages(prev => {
+          const updated = { ...prev, [outfitKey]: data.generatedImage }
+          console.log('✅ Try-on images updated:', updated)
+          return updated
+        })
+      }
+      
+      // Always store the styling description
+      if (data.description) {
+        setTryOnDescriptions(prev => ({ ...prev, [outfitKey]: data.description }))
+      }
+      
+      // Show success message with appropriate info
+      if (!data.generatedImage && data.description) {
+        console.log('ℹ️ Generated styling advice (no image)')
+      }
     } catch (error) {
       console.error('Try-on generation error:', error)
       alert('Failed to generate try-on. Please try again.')

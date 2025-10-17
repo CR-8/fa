@@ -62,7 +62,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
-          userImageUrl: userImages[0],
+          personImages: userImages, // Pass all user photos for better results
         }),
       })
       const data = await response.json()
@@ -89,7 +89,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
-          userImageUrl: userImages[0],
+          personImage: userImages[0],
         }),
       })
       const data = await response.json()
