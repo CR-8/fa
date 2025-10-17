@@ -119,8 +119,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Use gemini-2.0-flash-exp for all requests (supports both text and vision)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    // Use gemini-2.5-flash for all requests (supports both text and vision)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Create a prompt that includes product information
     const productInfo = products.map((p, index) =>

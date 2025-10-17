@@ -205,17 +205,15 @@ export default function AIFAPage() {
 
     setIsTyping(true)
     try {
-      // Use the first available user image for try-on (only Cloudinary URLs)
+      // Get all valid Cloudinary user images for best try-on results
       const validCloudinaryImages = userImages.filter(img => isValidCloudinaryUrl(img))
-      const userImageToUse = validCloudinaryImages.length > 0 ? validCloudinaryImages[0] : "/placeholder.svg";
 
       console.log("🔍 Debug - userImages array:", userImages); // Debug log to see what's in userImages
       console.log("🔍 Debug - validCloudinaryImages:", validCloudinaryImages); // Debug log to see valid Cloudinary images
       console.log("🔍 Debug - userImages.length:", userImages.length); // Debug log to see array length
       console.log("🔍 Debug - user.poses:", user.poses); // Debug log to see fallback poses
-      console.log("Try-on image URL (should be Cloudinary):", userImageToUse); // Debug log to see if Cloudinary URL is being used
 
-      if (userImageToUse === "/placeholder.svg") {
+      if (validCloudinaryImages.length === 0) {
         const errorMessage = {
           id: `m${messages.length + 1}`,
           sender: "ai" as const,
@@ -228,11 +226,11 @@ export default function AIFAPage() {
         return
       }
 
-      // Add loading message showing we're using their uploaded image
+      // Add loading message showing we're using their uploaded images
       const loadingMessage = {
         id: `m${messages.length + 1}`,
         sender: "ai" as const,
-        text: `🎨 Creating your personalized try-on using your uploaded photo... This may take a moment!`,
+        text: `🎨 Creating your personalized try-on using ${validCloudinaryImages.length} of your uploaded photo${validCloudinaryImages.length > 1 ? 's' : ''}... This may take a moment!`,
         timestamp: new Date().toISOString(),
         suggestedProducts: [],
       }
@@ -246,7 +244,7 @@ export default function AIFAPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId,
-          userImageUrl: userImageToUse
+          personImages: validCloudinaryImages // Pass all valid Cloudinary images for better accuracy
         })
       })
 
@@ -398,11 +396,6 @@ export default function AIFAPage() {
             >
               <Send className="h-5 w-5" />
             </Button>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center text-xs text-muted-foreground">
-            <p>Powered by Google Gemini • Get personalized fashion advice instantly</p>
           </div>
         </div>
       </div>

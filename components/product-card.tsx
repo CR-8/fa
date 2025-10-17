@@ -114,7 +114,7 @@ export function ProductCard({ product, showTryOn = false, onTryOn }: ProductCard
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
-          userImageUrl: userImages[0] // Use first uploaded image
+          personImages: userImages // Pass all user photos for better results
         })
       })
 
