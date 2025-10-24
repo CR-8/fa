@@ -100,7 +100,7 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
 
   // Use the correct model for image generation
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-preview-image-generation",
     generationConfig: {
       maxOutputTokens: 8192,
       temperature: 0.4,
@@ -176,7 +176,7 @@ Negative Prompt:
   });
 
   console.log(`📤 Sending request to Gemini API:`, {
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.0-flash-preview-image-generation",
     promptLength: prompt.length,
     totalImages: userImageResults.length + productImageResults.length,
     userImages: userImageResults.length,
