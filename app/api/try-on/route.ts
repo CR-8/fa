@@ -2,9 +2,112 @@ import { products } from "@/data/products";
 import { generateTryOnImage } from "@/lib/image-generation";
 import { Product } from "@/data/models";
 
+// Simple in-memory rate limiter for try-on API
+class APIRateLimiter {
+  private requests: Map<string, number[]> = new Map();
+  private maxRequests: number;
+  private windowMs: number;
+
+  constructor(maxRequests: number = 5, windowMs: number = 60000) { // 5 requests per minute
+    this.maxRequests = maxRequests;
+    this.windowMs = windowMs;
+  }
+
+  canMakeRequest(identifier: string): boolean {
+    const now = Date.now();
+    const userRequests = this.requests.get(identifier) || [];
+    
+    // Remove old requests outside the window
+    const validRequests = userRequests.filter(time => now - time < this.windowMs);
+    
+    if (validRequests.length >= this.maxRequests) {
+      this.requests.set(identifier, validRequests);
+      return false;
+    }
+    
+    validRequests.push(now);
+    this.requests.set(identifier, validRequests);
+    return true;
+  }
+
+  getTimeUntilNextRequest(identifier: string): number {
+    const userRequests = this.requests.get(identifier) || [];
+    if (userRequests.length === 0) return 0;
+    
+    const now = Date.now();
+    const oldestRequest = Math.min(...userRequests);
+    const timePassed = now - oldestRequest;
+    return Math.max(0, this.windowMs - timePassed);
+  }
+}
+
+// Global rate limiter instance - stricter limits for production
+const rateLimiter = new APIRateLimiter(
+  process.env.NODE_ENV === 'production' ? 3 : 10, // 3 per minute in prod, 10 in dev
+  60000 // 1 minute window
+);
+
+// Request deduplication - prevent concurrent identical requests
+const ongoingRequests = new Map<string, Promise<Response>>();
+
+function generateRequestKey(body: any): string {
+  // Create a key based on the request parameters
+  const keyData = {
+    productId: body.productId,
+    personImages: body.personImages?.sort() || [],
+    clothingImages: body.clothingImages?.sort() || [],
+    category: body.category
+  };
+  return btoa(JSON.stringify(keyData));
+}
+
 export async function POST(req: Request) {
   const body = await req.json();
   
+  // Get client IP for rate limiting (fallback to a default if not available)
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
+  
+  // Check rate limit
+  if (!rateLimiter.canMakeRequest(clientIP)) {
+    const waitTime = Math.ceil(rateLimiter.getTimeUntilNextRequest(clientIP) / 1000);
+    return new Response(JSON.stringify({ 
+      error: "Too many requests. Please wait before trying again.",
+      retryAfter: waitTime
+    }), { 
+      status: 429,
+      headers: {
+        'Retry-After': waitTime.toString()
+      }
+    });
+  }
+
+  // Request deduplication
+  const requestKey = generateRequestKey(body);
+  if (ongoingRequests.has(requestKey)) {
+    console.log('🔄 Duplicate request detected, waiting for existing request to complete');
+    try {
+      return await ongoingRequests.get(requestKey)!;
+    } catch (error) {
+      // If the ongoing request failed, we'll proceed with a new one
+      ongoingRequests.delete(requestKey);
+    }
+  }
+
+  // Create the request promise and store it
+  const requestPromise = processTryOnRequest(body);
+  ongoingRequests.set(requestKey, requestPromise);
+
+  try {
+    const result = await requestPromise;
+    return result;
+  } finally {
+    ongoingRequests.delete(requestKey);
+  }
+}
+
+async function processTryOnRequest(body: any): Promise<Response> {
   // Support both old (singular) and new (plural/array) formats
   const personImage = body.personImage;
   const clothingImage = body.clothingImage;
@@ -29,9 +132,13 @@ export async function POST(req: Request) {
   try {
     console.log(`Generating try-on for ${product ? 'product' : 'wardrobe item'} with category: ${category || product?.category}`);
     console.log(`📊 Images count: ${personImages.length} user photo(s), ${clothingImages.length || product?.images.length} product image(s)`);
-
+    
     // Determine which clothing images to use
     const finalClothingImages = product ? product.images : clothingImages;
+    
+    console.log('🔍 API Debug - Received clothing images:', clothingImages);
+    console.log('🔍 API Debug - Final clothing images being sent:', finalClothingImages);
+    console.log('🔍 API Debug - Person images being sent:', personImages);
 
     // Use the centralized image generation utility with ALL available images
     const result = await generateTryOnImage({

@@ -251,7 +251,7 @@ export default function WardrobePage() {
       }
 
       // Get the actual wardrobe items
-      const items = outfitItems.map(it => wardrobeItems.find(w => w.id === it.id)).filter(Boolean)
+      const items = outfitItems.map(it => wardrobeItems.find(w => w.id === it.id)).filter((item): item is WardrobeItem => item !== undefined)
 
       if (items.length === 0) return
 
@@ -261,8 +261,11 @@ export default function WardrobePage() {
       console.log('📸 Try-on generation with:', {
         userPhotos: userPhotos.length,
         outfitItems: items.length,
-        clothingImages: clothingImages.length
+        clothingImages: clothingImages.length,
+        itemDetails: items.map(item => ({ name: item.name, category: item.category, image: item.image_url }))
       })
+      
+      console.log('🎯 Sending these clothing images to API:', clothingImages)
 
       // Generate try-on with ALL user photos and ALL clothing images for best accuracy
       const response = await fetch('/api/try-on', {

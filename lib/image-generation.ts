@@ -93,6 +93,8 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
     category,
     hasAPIKey: !!process.env.GOOGLE_API_KEY
   });
+  console.log('🔍 Image Gen - User image URLs:', userImageUrls);
+  console.log('🔍 Image Gen - Product image URLs:', productImageUrls);
 
   // Fetch all user images and product images
   const userImageResults = await fetchMultipleImages(userImageUrls);
