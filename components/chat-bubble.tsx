@@ -36,18 +36,18 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
 
   if (message.type === "tryon-preview") {
     return (
-      <div className="flex justify-center mb-4">
-        <Card className="max-w-md">
-          <CardContent className="p-4">
-            <h4 className="font-semibold mb-2 text-center flex items-center gap-2">
+      <div className="flex justify-center mb-6">
+        <Card className="max-w-md border-2 border-neutral-200 dark:border-neutral-800 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] bg-white dark:bg-neutral-900">
+          <CardContent className="p-6">
+            <h4 className="font-bold mb-3 text-center flex items-center justify-center gap-2 uppercase tracking-wide text-neutral-900 dark:text-neutral-100">
               {message.generatedImage ? "🖼️ AI Generated Try-On" : "👔 Style Preview"}: {message.productName}
               {message.usedFallback && (
-                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                <span className="text-xs bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-2 py-1 rounded-sm border-2 border-neutral-300 dark:border-neutral-600 font-bold uppercase">
                   {message.provider || "Enhanced Styling"}
                 </span>
               )}
               {!message.usedFallback && (
-                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                <span className="text-xs bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 px-2 py-1 rounded-sm border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase">
                   AI Generated
                 </span>
               )}
@@ -55,31 +55,31 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
 
             {message.generatedImage ? (
               // Show the AI-generated combined image
-              <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
+              <div className="relative aspect-square rounded-sm overflow-hidden mb-4 border-2 border-neutral-200 dark:border-neutral-800">
                 <Image
                   src={message.generatedImage}
                   alt={`AI generated try-on: ${message.productName}`}
                   fill
                   className="object-cover"
                 />
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                <div className="absolute top-2 right-2 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 text-xs px-3 py-1 rounded-sm border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase">
                   AI Generated
                 </div>
               </div>
             ) : (
               // Fallback: show product image only
-              <div className="relative aspect-square rounded-lg overflow-hidden mb-3">
+              <div className="relative aspect-square rounded-sm overflow-hidden mb-4 border-2 border-neutral-200 dark:border-neutral-800">
                 <Image
                   src={message.productImage || "/placeholder.jpg"}
                   alt={message.productName || "Product"}
                   fill
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end justify-center p-4">
-                  <div className="text-center text-white">
+                <div className="absolute inset-0 bg-neutral-900/60 dark:bg-neutral-950/60 flex items-end justify-center p-4">
+                  <div className="text-center text-neutral-50 dark:text-neutral-100">
                     <div className="text-lg mb-1">✨</div>
-                    <div className="text-sm font-medium">Style Preview</div>
-                    <div className="text-xs opacity-90">
+                    <div className="text-sm font-bold uppercase tracking-wide">Style Preview</div>
+                    <div className="text-xs font-semibold uppercase">
                       {message.message?.includes("quota") ? 
                         "API quota reached - try again later!" : 
                         "Enhanced styling recommendations"}
@@ -89,16 +89,16 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
               </div>
             )}
 
-            <div className="text-sm text-muted-foreground mb-3">
-              <p className="font-medium mb-1">
+            <div className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+              <p className="font-bold mb-2 uppercase tracking-wide text-neutral-900 dark:text-neutral-100">
                 {message.generatedImage ? "AI Fashion Analysis:" : "Fashion Expert Analysis:"}
               </p>
-              <p>{message.description}</p>
+              <p className="font-medium">{message.description}</p>
               {message.message && (
-                <p className="mt-2 text-xs italic text-blue-600">{message.message}</p>
+                <p className="mt-2 text-xs font-semibold uppercase text-neutral-900 dark:text-neutral-100">{message.message}</p>
               )}
             </div>
-            <Button className="w-full" size="sm">
+            <Button className="w-full h-10 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide" size="sm">
               Add to Cart
             </Button>
           </CardContent>
@@ -108,18 +108,18 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
   }
 
   return (
-    <div className={`flex gap-3 mb-4 ${isUser ? "flex-row-reverse" : ""}`}>
-      <Avatar className="h-8 w-8 flex-shrink-0">
+    <div className={`flex gap-3 mb-6 ${isUser ? "flex-row-reverse" : ""}`}>
+      <Avatar className="h-8 w-8 flex-shrink-0 rounded-sm border-2 border-neutral-300 dark:border-neutral-600">
         {isUser ? (
           <>
             <AvatarImage src="/diverse-user-avatars.png" />
-            <AvatarFallback>
+            <AvatarFallback className="rounded-sm bg-neutral-200 dark:bg-neutral-800">
               <User className="h-4 w-4" />
             </AvatarFallback>
           </>
         ) : (
           <>
-            <AvatarFallback className="bg-primary text-primary-foreground">
+            <AvatarFallback className="bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 rounded-sm">
               <Bot className="h-4 w-4" />
             </AvatarFallback>
           </>
@@ -128,14 +128,14 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
 
       <div className={`flex-1 max-w-[80%] ${isUser ? "flex justify-end" : ""}`}>
         <div
-          className={`rounded-2xl px-4 py-3 ${
-            isUser ? "bg-primary text-white ml-auto" : "bg-neutral-100 dark:bg-neutral-800"
+          className={`rounded-sm px-4 py-3 border-2 ${
+            isUser ? "bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 border-neutral-900 dark:border-neutral-100 ml-auto" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700"
           }`}
         >
           {isUser ? (
-            <p className="text-sm">{message.text}</p>
+            <p className="text-sm font-semibold">{message.text}</p>
           ) : (
-            <div className="text-sm">
+            <div className="text-sm font-medium">
               <MarkdownRenderer content={message.text || ""} />
             </div>
           )}
@@ -143,8 +143,8 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
 
         {/* Show suggested products for AI messages */}
         {isAI && message.suggestedProducts && message.suggestedProducts.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs text-muted-foreground mb-2">Suggested items:</p>
+          <div className="mt-4">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-3 font-bold uppercase tracking-wide">Suggested items:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {message.suggestedProducts.map((productId) => {
                 const product = products.find((p) => p.id === productId)
@@ -156,7 +156,7 @@ export function ChatBubble({ message, onTryOn }: ChatBubbleProps) {
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 font-semibold uppercase tracking-wide">
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",

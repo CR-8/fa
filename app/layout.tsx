@@ -6,6 +6,11 @@ import { BottomNav } from "@/components/bottom-nav"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/components/auth-provider"
+import { CartProvider } from "@/lib/store/cart-context"
+import { WishlistProvider } from "@/lib/store/wishlist-context"
+import { SearchProvider } from "@/lib/store/search-context"
+import { ToastProvider } from "@/lib/store/toast-context"
 import { Suspense } from "react"
 import "./globals.css"
 
@@ -105,20 +110,29 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
-            <Header />
-            <main className="pb-20 pt-0">
-              <Suspense fallback={
-                <div className="flex items-center justify-center min-h-[60vh]">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                </div>
-              }>
-                {children}
-              </Suspense>
-            </main>
-            <BottomNav />
-            <Footer />
-          </div>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <SearchProvider>
+                  <ToastProvider>
+                    <div className="min-h-screen bg-white dark:bg-neutral-950">
+                      <Header />
+                      <main className="pb-20 pt-0">
+                        <Suspense fallback={
+                          <div className="flex items-center justify-center min-h-[60vh]">
+                            <div className="animate-spin rounded-sm h-12 w-12 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent"></div>
+                          </div>
+                        }>
+                          {children}
+                        </Suspense>
+                      </main>
+                      <Footer />
+                    </div>
+                  </ToastProvider>
+                </SearchProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
           <Analytics />
         </ThemeProvider>
       </body>

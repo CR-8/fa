@@ -40,42 +40,42 @@ export default function CartPage() {
   const total = subtotal + shipping + tax
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+      <div className="container mx-auto px-6 lg:px-8 py-10 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-primary/20 rounded-xl">
-              <ShoppingCart className="h-8 w-8 text-primary" />
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-4 bg-neutral-900 dark:bg-neutral-100 rounded-sm border-2 border-neutral-900 dark:border-neutral-100">
+              <ShoppingCart className="h-8 w-8 text-neutral-50 dark:text-neutral-900" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">
                 Shopping Cart
               </h1>
-              <p className="text-muted-foreground">
-                {cartItems.length} {cartItems.length === 1 ? 'premium item' : 'premium items'} in your cart
+              <p className="text-neutral-600 dark:text-neutral-400 font-medium uppercase text-sm tracking-wide">
+                {cartItems.length} {cartItems.length === 1 ? 'Item' : 'Items'} in your cart
               </p>
             </div>
           </div>
         </div>
 
         {/* Trust Badges */}
-        <div className="flex flex-wrap justify-center gap-6 mb-8 p-4 bg-primary/5 rounded-lg border border-primary/10">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">✓</span>
+        <div className="flex flex-wrap justify-center gap-6 mb-8 p-6 bg-white dark:bg-neutral-900 rounded-sm border-2 border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center gap-3 text-sm text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wide">
+            <div className="w-6 h-6 bg-neutral-900 dark:bg-neutral-100 rounded-sm flex items-center justify-center border-2 border-neutral-900 dark:border-neutral-100">
+              <span className="text-neutral-50 dark:text-neutral-900 text-xs font-bold">✓</span>
             </div>
-            Secure SSL Encryption
+            Secure SSL
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">✓</span>
+          <div className="flex items-center gap-3 text-sm text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wide">
+            <div className="w-6 h-6 bg-neutral-900 dark:bg-neutral-100 rounded-sm flex items-center justify-center border-2 border-neutral-900 dark:border-neutral-100">
+              <span className="text-neutral-50 dark:text-neutral-900 text-xs font-bold">✓</span>
             </div>
             Free Shipping ₹999+
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">✓</span>
+          <div className="flex items-center gap-3 text-sm text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wide">
+            <div className="w-6 h-6 bg-neutral-900 dark:bg-neutral-100 rounded-sm flex items-center justify-center border-2 border-neutral-900 dark:border-neutral-100">
+              <span className="text-neutral-50 dark:text-neutral-900 text-xs font-bold">✓</span>
             </div>
             30-Day Returns
           </div>
@@ -86,11 +86,11 @@ export default function CartPage() {
             {/* Cart Items */}
             <div className="xl:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <Card key={item.product.id} className="bg-card border-border/50 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4 sm:p-6">
+                <Card key={item.product.id} className="bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.05)]">
+                  <CardContent className="p-6">
                     <div className="flex flex-col sm:flex-row gap-4">
                       {/* Product Image */}
-                      <div className="relative h-32 w-full sm:h-24 sm:w-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                      <div className="relative h-32 w-full sm:h-24 sm:w-24 rounded-sm overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex-shrink-0 border-2 border-neutral-200 dark:border-neutral-700">
                         <Image
                           src={item.product.images[0]}
                           alt={item.product.name}
@@ -102,13 +102,13 @@ export default function CartPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
+                            <h3 className="font-bold text-neutral-900 dark:text-neutral-100 mb-1 line-clamp-2 uppercase tracking-wide">
                               {item.product.name}
                             </h3>
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2 font-medium uppercase tracking-wide">
                               {item.product.brand}
                             </p>
-                            <p className="text-lg font-bold text-primary">
+                            <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
                               ₹{item.product.price.toLocaleString('en-IN')}
                             </p>
                           </div>
@@ -118,7 +118,7 @@ export default function CartPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeItem(item.product.id)}
-                              className="text-muted-foreground hover:text-destructive p-1"
+                              className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 p-2 rounded-sm"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -128,12 +128,12 @@ export default function CartPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                className="h-8 w-8 p-0 border-border hover:border-primary"
+                                className="h-8 w-8 p-0 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
 
-                              <span className="w-8 text-center text-foreground font-medium">
+                              <span className="w-8 text-center text-neutral-900 dark:text-neutral-100 font-bold">
                                 {item.quantity}
                               </span>
 
@@ -141,13 +141,13 @@ export default function CartPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                className="h-8 w-8 p-0 border-border hover:border-primary"
+                                className="h-8 w-8 p-0 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
 
-                            <p className="text-sm font-medium text-muted-foreground">
+                            <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase">
                               ₹{(item.product.price * item.quantity).toLocaleString('en-IN')}
                             </p>
                           </div>
@@ -162,62 +162,62 @@ export default function CartPage() {
             {/* Order Summary - Sticky on larger screens */}
             <div className="space-y-6">
               <div className="sticky top-24">
-                <Card className="bg-card border-border/50 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-foreground flex items-center gap-2">
+                <Card className="bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]">
+                  <CardHeader className="border-b-2 border-neutral-200 dark:border-neutral-800">
+                    <CardTitle className="text-neutral-900 dark:text-neutral-100 flex items-center gap-2 font-bold uppercase tracking-wide">
                       <CreditCard className="h-5 w-5" />
                       Order Summary
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Subtotal ({cartItems.length} items)</span>
+                  <CardContent className="space-y-4 pt-6">
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400 font-semibold uppercase text-sm tracking-wide">
+                      <span>Subtotal ({cartItems.length})</span>
                       <span>₹{subtotal.toLocaleString('en-IN')}</span>
                     </div>
 
-                    <div className="flex justify-between text-muted-foreground">
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400 font-semibold uppercase text-sm tracking-wide">
                       <span>Shipping</span>
-                      <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>
+                      <span className={shipping === 0 ? 'text-neutral-900 dark:text-neutral-100 font-bold' : ''}>
                         {shipping === 0 ? 'Free' : `₹${shipping.toLocaleString('en-IN')}`}
                       </span>
                     </div>
 
-                    <div className="flex justify-between text-muted-foreground">
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400 font-semibold uppercase text-sm tracking-wide">
                       <span>Tax (GST)</span>
                       <span>₹{tax.toLocaleString('en-IN')}</span>
                     </div>
 
-                    <Separator className="bg-border" />
+                    <Separator className="bg-neutral-200 dark:bg-neutral-800 h-[2px]" />
 
-                    <div className="flex justify-between text-lg font-bold text-foreground">
+                    <div className="flex justify-between text-lg font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                       <span>Total</span>
                       <span>₹{total.toLocaleString('en-IN')}</span>
                     </div>
 
-                    <div className="text-xs text-muted-foreground text-center">
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400 text-center font-medium uppercase tracking-wide">
                       Inclusive of all taxes
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Promo Code */}
-                <Card className="bg-card border-border/50 shadow-sm">
-                  <CardContent className="p-4">
+                <Card className="bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm">
+                  <CardContent className="p-6">
                     <div className="space-y-3">
-                      <h4 className="font-medium text-foreground">Have a promo code?</h4>
+                      <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide text-sm">Have a promo code?</h4>
                       <div className="flex gap-2">
-                        <Input placeholder="Enter code" className="flex-1" />
-                        <Button variant="outline" size="sm">Apply</Button>
+                        <Input placeholder="ENTER CODE" className="flex-1 h-12 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-semibold uppercase placeholder:text-neutral-500" />
+                        <Button variant="outline" className="h-12 px-6 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase hover:bg-neutral-100 dark:hover:bg-neutral-800">Apply</Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Checkout Button */}
-                <Button className="w-full h-12 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg" asChild>
+                <Button className="w-full h-14 text-base font-bold uppercase tracking-wide bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100" asChild>
                   <Link href="/checkout">
                     <CreditCard className="h-5 w-5 mr-2" />
-                    Proceed to Secure Checkout
+                    Secure Checkout
                   </Link>
                 </Button>
 
@@ -225,7 +225,7 @@ export default function CartPage() {
                 <Button
                   variant="outline"
                   asChild
-                  className="w-full h-12 border-border hover:bg-muted"
+                  className="w-full h-14 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 >
                   <Link href="/shop">Continue Shopping</Link>
                 </Button>
@@ -234,18 +234,18 @@ export default function CartPage() {
           </div>
         ) : (
           /* Empty Cart State */
-          <Card className="max-w-lg mx-auto bg-card border-border/50 shadow-sm">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-muted flex items-center justify-center">
-                <ShoppingCart className="h-10 w-10 text-muted-foreground" />
+          <Card className="max-w-lg mx-auto bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]">
+            <CardHeader className="text-center pt-8">
+              <div className="mx-auto mb-6 h-20 w-20 rounded-sm bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center border-2 border-neutral-300 dark:border-neutral-700">
+                <ShoppingCart className="h-10 w-10 text-neutral-500 dark:text-neutral-400" />
               </div>
-              <CardTitle className="text-foreground">Your cart is empty</CardTitle>
+              <CardTitle className="text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-tight text-2xl">Your cart is empty</CardTitle>
             </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-muted-foreground">
+            <CardContent className="text-center space-y-4 pb-8">
+              <p className="text-neutral-600 dark:text-neutral-400 font-medium">
                 Discover premium fashion pieces and add them to your cart
               </p>
-              <Button asChild className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
+              <Button asChild className="bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide h-12 px-8">
                 <Link href="/shop">Start Shopping</Link>
               </Button>
             </CardContent>

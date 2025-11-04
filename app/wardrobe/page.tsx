@@ -318,36 +318,36 @@ export default function WardrobePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/profile" className="p-1.5 sm:p-2 hover:bg-muted rounded-full">
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+      <div className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-950 border-b-2 border-neutral-200 dark:border-neutral-800">
+        <div className="container mx-auto px-6 lg:px-8 py-4">
+          <div className="flex items-center gap-4">
+            <Link href="/profile" className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-sm border-2 border-neutral-300 dark:border-neutral-600">
+              <ArrowLeft className="h-5 w-5" />
             </Link>
-            <div className="p-1.5 sm:p-2 bg-primary/10 rounded-full">
-              <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <div className="p-3 bg-neutral-900 dark:bg-neutral-100 rounded-sm border-2 border-neutral-900 dark:border-neutral-100">
+              <Shirt className="h-6 w-6 text-neutral-50 dark:text-neutral-900" />
             </div>
-            <h1 className="text-lg sm:text-xl font-semibold">My Wardrobe</h1>
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">My Wardrobe</h1>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-6 lg:px-8 py-10 max-w-6xl">
         {/* Add Item Button */}
         <div className="mb-6">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto h-12 px-6 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Clothing Item
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm">
               <DialogHeader>
-                <DialogTitle>Add to Wardrobe</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wide">Add to Wardrobe</DialogTitle>
+                <DialogDescription className="text-neutral-600 dark:text-neutral-400 font-medium">
                   Upload a photo of your clothing item and add details to build your digital wardrobe.
                 </DialogDescription>
               </DialogHeader>
@@ -355,7 +355,7 @@ export default function WardrobePage() {
               <div className="space-y-4">
                 {/* Image Upload */}
                 <div>
-                  <Label>Photo</Label>
+                  <Label className="font-bold uppercase text-sm tracking-wide">Photo</Label>
                   <div className="mt-2">
                     {formData.imageUrl ? (
                       <div className="relative">
@@ -364,19 +364,19 @@ export default function WardrobePage() {
                           alt="Clothing item"
                           width={200}
                           height={200}
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full h-48 object-cover rounded-sm border-2 border-neutral-200 dark:border-neutral-700"
                         />
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="absolute top-2 right-2"
+                          className="absolute top-2 right-2 rounded-sm"
                           onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                      <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-sm p-8 text-center">
                         <input
                           type="file"
                           accept="image/*"
@@ -388,9 +388,9 @@ export default function WardrobePage() {
                           {uploading ? (
                             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
                           ) : (
-                            <Plus className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                            <Plus className="h-8 w-8 mx-auto mb-2 text-neutral-500 dark:text-neutral-400" />
                           )}
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium uppercase">
                             {uploading ? 'Uploading...' : 'Click to upload photo'}
                           </p>
                         </label>
@@ -401,70 +401,74 @@ export default function WardrobePage() {
 
                 {/* Category */}
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category" className="font-bold uppercase text-sm tracking-wide">Category</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as WardrobeItem['category'] }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                    <SelectTrigger className="h-12 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-semibold">
+                      <SelectValue placeholder="SELECT CATEGORY" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="shirt">Shirt</SelectItem>
-                      <SelectItem value="pants">Pants</SelectItem>
-                      <SelectItem value="suit">Suit</SelectItem>
-                      <SelectItem value="t-shirt">T-Shirt</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                    <SelectContent className="bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm">
+                      <SelectItem value="shirt" className="font-semibold uppercase">Shirt</SelectItem>
+                      <SelectItem value="pants" className="font-semibold uppercase">Pants</SelectItem>
+                      <SelectItem value="suit" className="font-semibold uppercase">Suit</SelectItem>
+                      <SelectItem value="t-shirt" className="font-semibold uppercase">T-Shirt</SelectItem>
+                      <SelectItem value="other" className="font-semibold uppercase">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Name */}
                 <div>
-                  <Label htmlFor="name">Name (Optional)</Label>
+                  <Label htmlFor="name" className="font-bold uppercase text-sm tracking-wide">Name (Optional)</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Blue Cotton Shirt"
+                    placeholder="E.G., BLUE COTTON SHIRT"
+                    className="h-12 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-semibold placeholder:text-neutral-500 uppercase"
                   />
                 </div>
 
                 {/* Color */}
                 <div>
-                  <Label htmlFor="color">Color</Label>
+                  <Label htmlFor="color" className="font-bold uppercase text-sm tracking-wide">Color</Label>
                   <Input
                     id="color"
                     value={formData.color}
                     onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    placeholder="e.g., Blue"
+                    placeholder="E.G., BLUE"
+                    className="h-12 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-semibold placeholder:text-neutral-500 uppercase"
                   />
                 </div>
 
                 {/* Size */}
                 <div>
-                  <Label htmlFor="size">Size</Label>
+                  <Label htmlFor="size" className="font-bold uppercase text-sm tracking-wide">Size</Label>
                   <Input
                     id="size"
                     value={formData.size}
                     onChange={(e) => setFormData(prev => ({ ...prev, size: e.target.value }))}
-                    placeholder="e.g., M"
+                    placeholder="E.G., M"
+                    className="h-12 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-semibold placeholder:text-neutral-500 uppercase"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="font-bold uppercase text-sm tracking-wide">Description</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Brief description of the item..."
+                    placeholder="BRIEF DESCRIPTION OF THE ITEM..."
                     rows={3}
+                    className="border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-medium placeholder:text-neutral-500"
                   />
                 </div>
 
                 <Button
                   onClick={handleSaveItem}
                   disabled={analyzing || !formData.imageUrl || !formData.category}
-                  className="w-full"
+                  className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide"
                 >
                   {analyzing ? (
                     <>
@@ -484,18 +488,19 @@ export default function WardrobePage() {
         </div>
 
         {/* Occasion prompt and recommendations trigger */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div className="md:col-span-2">
-            <Label htmlFor="occasion">Occasion</Label>
+            <Label htmlFor="occasion" className="font-bold uppercase text-sm tracking-wide">Occasion</Label>
             <Input
               id="occasion"
-              placeholder="e.g., Suggest an outfit for a party"
+              placeholder="E.G., SUGGEST AN OUTFIT FOR A PARTY"
               value={occasion}
               onChange={(e) => setOccasion(e.target.value)}
+              className="h-12 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-semibold placeholder:text-neutral-500 uppercase"
             />
           </div>
           <div>
-            <Button className="w-full" onClick={requestRecommendations} disabled={recsLoading || wardrobeItems.length === 0}>
+            <Button className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide" onClick={requestRecommendations} disabled={recsLoading || wardrobeItems.length === 0}>
               {recsLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -507,7 +512,7 @@ export default function WardrobePage() {
             </Button>
           </div>
           {errorMsg && (
-            <div className="md:col-span-3 text-sm text-red-500">
+            <div className="md:col-span-3 text-sm text-neutral-900 dark:text-neutral-100 font-semibold uppercase">
               {errorMsg}
             </div>
           )}
@@ -516,18 +521,20 @@ export default function WardrobePage() {
         {/* Wardrobe Items */}
         {wardrobeItems.length === 0 ? (
           <div className="text-center py-16">
-            <Shirt className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">Your wardrobe is empty</h3>
-            <p className="text-muted-foreground mb-6">
+            <div className="mx-auto mb-6 h-20 w-20 rounded-sm bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center border-2 border-neutral-300 dark:border-neutral-700">
+              <Shirt className="h-10 w-10 text-neutral-500 dark:text-neutral-400" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2 text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">Your wardrobe is empty</h3>
+            <p className="text-neutral-600 dark:text-neutral-400 mb-6 font-medium">
               Start building your digital wardrobe by adding your clothing items
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {wardrobeItems.map((item) => (
-              <Card key={item.id} className="group cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={item.id} className="group cursor-pointer bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.05)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.05)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] transition-all">
                 <CardContent className="p-0">
-                  <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                  <div className="aspect-square relative overflow-hidden rounded-t-sm border-b-2 border-neutral-200 dark:border-neutral-800">
                     <Image
                       src={item.image_url}
                       alt={item.name}
@@ -535,14 +542,14 @@ export default function WardrobePage() {
                       className="object-cover"
                     />
                     <div className="absolute top-2 right-2">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-2 border-neutral-900 dark:border-neutral-100 bg-white dark:bg-neutral-900 rounded-sm font-bold uppercase">
                         {item.category}
                       </Badge>
                     </div>
                   </div>
                   <div className="p-3">
-                    <h3 className="font-medium text-sm truncate">{item.name}</h3>
-                    <p className="text-xs text-muted-foreground">{item.color} • {item.size}</p>
+                    <h3 className="font-bold text-sm truncate uppercase tracking-wide text-neutral-900 dark:text-neutral-100">{item.name}</h3>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 font-semibold uppercase">{item.color} • {item.size}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -553,17 +560,17 @@ export default function WardrobePage() {
         {/* Recommendations display */}
         {recommendations && recommendations.recommendations?.length > 0 && (
           <div className="mt-10">
-            <h2 className="text-lg font-semibold mb-6">Recommended Outfits for "{recommendations.occasion}"</h2>
+            <h2 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">Recommended Outfits for "{recommendations.occasion}"</h2>
             <div className="space-y-8">
               {recommendations.recommendations.map((rec, idx) => {
                 const outfitKey = `rec-${idx}`
                 return (
-                  <Card key={idx} className="overflow-hidden">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-lg">{rec.title}</CardTitle>
-                      {rec.why && <p className="text-sm text-muted-foreground mt-2">{rec.why}</p>}
+                  <Card key={idx} className="overflow-hidden bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]">
+                    <CardHeader className="pb-4 border-b-2 border-neutral-200 dark:border-neutral-800">
+                      <CardTitle className="text-xl font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">{rec.title}</CardTitle>
+                      {rec.why && <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 font-medium">{rec.why}</p>}
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-6 pt-6">
                       {/* Outfit Items + Try-on Flow */}
                       <div className="flex flex-col lg:flex-row items-center gap-4">
                         {/* Individual Items */}
@@ -573,7 +580,7 @@ export default function WardrobePage() {
                             return (
                               <div key={it.id} className="flex items-center gap-2">
                                 <div className="relative">
-                                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 border-muted">
+                                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-sm overflow-hidden border-2 border-neutral-300 dark:border-neutral-600">
                                     {full?.image_url ? (
                                       <Image
                                         src={full.image_url}
@@ -582,20 +589,20 @@ export default function WardrobePage() {
                                         className="object-cover"
                                       />
                                     ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                                        <Shirt className="h-6 w-6 text-muted-foreground" />
+                                      <div className="w-full h-full flex items-center justify-center bg-neutral-200 dark:bg-neutral-800">
+                                        <Shirt className="h-6 w-6 text-neutral-500 dark:text-neutral-400" />
                                       </div>
                                     )}
                                   </div>
                                   {/* Label overlay */}
                                   <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
-                                    <Badge variant="default" className="text-xs px-2 py-0.5">
+                                    <Badge variant="default" className="text-xs px-2 py-0.5 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 rounded-sm border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase">
                                       {it.category || full?.category}
                                     </Badge>
                                   </div>
                                 </div>
                                 {itemIdx < rec.items.length - 1 && (
-                                  <div className="text-2xl font-bold text-muted-foreground">+</div>
+                                  <div className="text-2xl font-bold text-neutral-500 dark:text-neutral-400">+</div>
                                 )}
                               </div>
                             )
@@ -603,12 +610,12 @@ export default function WardrobePage() {
                         </div>
 
                         {/* Equals Sign */}
-                        <div className="text-3xl font-bold text-muted-foreground">=</div>
+                        <div className="text-3xl font-bold text-neutral-500 dark:text-neutral-400">=</div>
 
                         {/* Try-on Result */}
                         <div className="flex flex-col items-center gap-3">
                           <div className="relative">
-                            <div className="w-32 h-48 sm:w-40 sm:h-60 rounded-lg overflow-hidden border-2 border-primary shadow-lg">
+                            <div className="w-32 h-48 sm:w-40 sm:h-60 rounded-sm overflow-hidden border-2 border-neutral-900 dark:border-neutral-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
                               {tryOnImages[outfitKey] ? (
                                 <Image
                                   src={tryOnImages[outfitKey]}
@@ -617,23 +624,23 @@ export default function WardrobePage() {
                                   className="object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-muted">
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 dark:bg-neutral-800">
                                   {generatingTryOn[outfitKey] ? (
                                     <>
                                       <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                                      <span className="text-xs text-center">Generating try-on...</span>
+                                      <span className="text-xs text-center font-semibold uppercase">Generating...</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Shirt className="h-8 w-8 text-muted-foreground mb-2" />
-                                      <span className="text-xs text-center">Click to generate try-on</span>
+                                      <Shirt className="h-8 w-8 text-neutral-500 dark:text-neutral-400 mb-2" />
+                                      <span className="text-xs text-center font-semibold uppercase">Try-on</span>
                                     </>
                                   )}
                                 </div>
                               )}
                             </div>
                             <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                              <Badge variant="default" className="bg-primary text-primary-foreground">
+                              <Badge variant="default" className="bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 border-2 border-neutral-900 dark:border-neutral-100 rounded-sm font-bold uppercase">
                                 Try-on
                               </Badge>
                             </div>
@@ -643,7 +650,7 @@ export default function WardrobePage() {
                             <Button
                               size="sm"
                               onClick={() => generateOutfitTryOn(idx, rec.items)}
-                              className="text-xs"
+                              className="text-xs h-10 px-4 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide"
                             >
                               Generate Try-on
                             </Button>
@@ -652,12 +659,12 @@ export default function WardrobePage() {
                       </div>
 
                       {/* Item Details */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t-2 border-neutral-200 dark:border-neutral-800">
                         {rec.items.map((it) => {
                           const full = wardrobeItems.find(w => w.id === it.id)
                           return (
-                            <div key={it.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                              <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
+                            <div key={it.id} className="flex items-center gap-3 p-3 rounded-sm bg-neutral-100 dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700">
+                              <div className="w-12 h-12 rounded-sm overflow-hidden flex-shrink-0 border-2 border-neutral-300 dark:border-neutral-600">
                                 {full?.image_url ? (
                                   <Image
                                     src={full.image_url}
@@ -667,16 +674,16 @@ export default function WardrobePage() {
                                     className="object-cover w-full h-full"
                                   />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                                    <Shirt className="h-4 w-4 text-muted-foreground" />
+                                  <div className="w-full h-full flex items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+                                    <Shirt className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
                                   </div>
                                 )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="font-medium text-sm truncate">
+                                <div className="font-bold text-sm truncate text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
                                   {it.name || full?.name || 'Item'}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-xs text-neutral-600 dark:text-neutral-400 font-semibold uppercase">
                                   {full?.color} • {full?.size}
                                 </div>
                               </div>

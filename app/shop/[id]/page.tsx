@@ -109,24 +109,24 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
 
 
       {/* Main Content */}
-      <div className="max-w-6xl  mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Images Section */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Virtual Try-On Card */}
-            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
+            <Card className="border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]">
+              <CardHeader className="pb-3 border-b-2 border-neutral-200 dark:border-neutral-800">
+                <CardTitle className="text-lg flex items-center gap-2 font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
+                  <Sparkles className="h-5 w-5" />
                   Virtual Try-On
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="aspect-[3/4] relative rounded-lg overflow-hidden bg-muted/50">
+              <CardContent className="space-y-4 pt-6">
+                <div className="aspect-[3/4] relative rounded-sm overflow-hidden bg-neutral-200 dark:bg-neutral-800 border-2 border-neutral-300 dark:border-neutral-700">
                   {userImages.length > 0 ? (
                     autoTryOnImage ? (
                       <Image
@@ -137,8 +137,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                       />
                     ) : isGeneratingAutoTryOn ? (
                       <div className="flex flex-col items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                        <p className="text-sm text-muted-foreground text-center">
+                        <div className="animate-spin rounded-sm h-8 w-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent mb-4"></div>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center font-medium uppercase tracking-wide">
                           Creating your personalized preview...
                         </p>
                       </div>
@@ -153,18 +153,18 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     )
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                      <Camera className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <Camera className="h-12 w-12 text-neutral-500 dark:text-neutral-400 mb-4" />
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 font-medium">
                         Upload photos to see yourself in this outfit
                       </p>
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800">
                         <Link href="/profile">Upload Photos</Link>
                       </Button>
                     </div>
                   )}
                 </div>
                 <Button
-                  className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all"
+                  className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide"
                   disabled={userImages.length === 0}
                   onClick={handleTryOn}
                 >
@@ -190,17 +190,17 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             {/* Product Title and Price */}
             <div className="space-y-4">
               <div>
-                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">
                   {product.name}
                 </h1>
-                <p className="text-lg text-muted-foreground font-medium mt-2">{product.brand}</p>
+                <p className="text-lg text-neutral-600 dark:text-neutral-400 font-bold mt-2 uppercase tracking-wide">{product.brand}</p>
               </div>
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-primary">₹{product.price.toLocaleString("en-IN")}</span>
-                <span className="text-lg text-muted-foreground line-through">
+                <span className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">₹{product.price.toLocaleString("en-IN")}</span>
+                <span className="text-lg text-neutral-500 dark:text-neutral-400 line-through font-semibold">
                   ₹{(product.price * 1.2).toLocaleString("en-IN")}
                 </span>
-                <Badge variant="secondary" className="bg-green-500/10 text-green-600">
+                <Badge variant="outline" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase">
                   Save ₹{(product.price * 0.2).toLocaleString("en-IN")}
                 </Badge>
               </div>
@@ -210,7 +210,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <div className="flex items-center gap-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  <Star key={i} className="h-4 w-4 text-neutral-900 dark:text-neutral-100 fill-neutral-900 dark:fill-neutral-100" />
                 ))}
               </div>
               <span className="text-sm text-muted-foreground">(4.8) • 127 reviews</span>
