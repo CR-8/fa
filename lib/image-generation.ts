@@ -84,18 +84,6 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
 
   const { userImageUrls, productImageUrls, productName, productDescription, category } = options;
 
-  console.log(`🎨 Starting Gemini generation for product: ${productName}`);
-  console.log(`📋 Options:`, {
-    userImageCount: userImageUrls.length,
-    productImageCount: productImageUrls.length,
-    productName,
-    productDescription,
-    category,
-    hasAPIKey: !!process.env.GOOGLE_API_KEY
-  });
-  console.log('🔍 Image Gen - User image URLs:', userImageUrls);
-  console.log('🔍 Image Gen - Product image URLs:', productImageUrls);
-
   // Fetch all user images and product images
   const userImageResults = await fetchMultipleImages(userImageUrls);
   const productImageResults = await fetchMultipleImages(productImageUrls);

@@ -24,7 +24,7 @@ export interface CreditDeductionResult {
 }
 
 export const PLAN_LIMITS: Record<PlanTier, number> = {
-  free: 5,
+  free: 10, // 10 daily credits for wardrobe functionality
   pro: 100,
   elite: 300,
 };
@@ -37,11 +37,12 @@ export const PLAN_FEATURES: Record<PlanTier, {
 }> = {
   free: {
     name: 'Free',
-    dailyCredits: 5,
+    dailyCredits: 10,
     price: '$0',
     features: [
-      '5 AI generations per day',
+      '10 AI generations per day',
       'Basic virtual try-on',
+      'Wardrobe recommendations (3 per request)',
       'Standard processing speed',
       'Community support',
     ],
@@ -144,8 +145,9 @@ export async function hasCredits(userId: string): Promise<boolean> {
  */
 export function getCreditCost(operationType: string): number {
   const costs: Record<string, number> = {
-    'try-on': 1,
-    'outfit-suggestion': 2,
+    'try-on': 1, // Each image generation costs 1 credit
+    'wardrobe-try-on': 1, // Each wardrobe try-on image costs 1 credit
+    'outfit-suggestion': 0, // Recommendations are free (just shows 3 outfits)
     'style-analysis': 1,
     'batch-try-on': 3,
   };

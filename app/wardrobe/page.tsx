@@ -9,12 +9,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Shirt, Plus, X, Save, Loader2, ArrowLeft } from "lucide-react"
+import { Shirt, Plus, X, Save, Loader2, ArrowLeft, Coins } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { supabase, WardrobeItem } from "@/lib/supabase"
 import { rateLimiter } from "@/lib/rate-limiter"
 import { uploadImage } from "@/lib/upload"
+import { getUserCredits, deductCredit, hasCredits, formatCreditDisplay, getTimeUntilReset } from "@/lib/credits"
+import type { CreditInfo } from "@/lib/credits"
 
 export default function WardrobePage() {
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([])
@@ -29,6 +31,7 @@ export default function WardrobePage() {
     recommendations: { title: string; items: { id: string; name: string; category: string }[]; why: string }[]
   } | null>(null)
   const [tryOnImages, setTryOnImages] = useState<{[key: string]: string}>({})
+  const [creditInfo, setCreditInfo] = useState<CreditInfo | null>(null)
   const [tryOnDescriptions, setTryOnDescriptions] = useState<{[key: string]: string}>({})
   const [generatingTryOn, setGeneratingTryOn] = useState<{[key: string]: boolean}>({})
   const [errorMsg, setErrorMsg] = useState<string>("")
@@ -46,14 +49,29 @@ export default function WardrobePage() {
   // Load wardrobe items
   useEffect(() => {
     loadWardrobeItems()
+    loadCredits()
   }, [])
+
+  const loadCredits = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const credits = await getUserCredits(user.id)
+      setCreditInfo(credits)
+    }
+  }
 
   const loadWardrobeItems = async () => {
     try {
       setLoading(true)
 
-      // For now, use a temporary user ID (replace with actual auth later)
-      const userId = 'user-1' // TODO: Get from auth
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.warn('No authenticated user found')
+        setLoading(false)
+        return
+      }
+      const userId = user.id
 
       const { data, error } = await supabase
         .from('wardrobe_items')
@@ -110,13 +128,20 @@ export default function WardrobePage() {
         body: JSON.stringify({ imageUrl, description })
       })
 
-      if (!response.ok) throw new Error('Analysis failed')
+      if (!response.ok) {
+        console.warn('Analysis API returned error, using fallback')
+      }
 
       const data = await response.json()
-      return data.metadata
+      
+      // Check if fallback was used
+      if (data.usedFallback) {
+        console.log('AI analysis used fallback:', data.fallbackReason || 'Service unavailable')
+      }
+      
+      return data.metadata || {}
     } catch (error) {
       console.error('AI analysis error:', error)
-      return {}
     }
   }
 
@@ -128,10 +153,17 @@ export default function WardrobePage() {
 
     setAnalyzing(true)
     try {
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert("Please sign in first.")
+        setAnalyzing(false)
+        return
+      }
+      const userId = user.id
+
       // Analyze with AI
       const metadata = await analyzeClothingWithAI(formData.imageUrl, formData.description)
-
-      const userId = 'user-1' // TODO: Get from auth
 
       const newItem: WardrobeItem = {
         user_id: userId,
@@ -192,6 +224,14 @@ export default function WardrobePage() {
       return
     }
 
+    // Get authenticated user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setErrorMsg("Please sign in first.")
+      return
+    }
+    const userId = user.id
+
     if (!rateLimiter.canMakeRequest()) {
       const waitMs = rateLimiter.getTimeUntilNextRequest()
       const secs = Math.ceil(waitMs / 1000)
@@ -199,12 +239,17 @@ export default function WardrobePage() {
       return
     }
 
+    // Clear previous try-on images and descriptions when requesting new recommendations
+    setTryOnImages({})
+    setTryOnDescriptions({})
+    setGeneratingTryOn({})
+
     setRecsLoading(true)
     try {
       const response = await fetch('/api/wardrobe-recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ occasion, userId: 'user-1' }) // TODO: replace with auth user id
+        body: JSON.stringify({ occasion, userId })
       })
 
       if (!response.ok) {
@@ -224,6 +269,21 @@ export default function WardrobePage() {
   const generateOutfitTryOn = async (recIndex: number, outfitItems: { id: string; name: string; category: string }[]) => {
     const outfitKey = `rec-${recIndex}`
     console.log('🎬 Starting try-on generation for outfit:', outfitKey)
+    
+    // Check credits before starting
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('Please sign in to use try-on feature')
+      return
+    }
+
+    // Check if user has enough credits
+    const hasEnough = await hasCredits(user.id)
+    if (!hasEnough) {
+      alert('⚠️ No credits remaining! You get 10 free credits daily. Credits will reset tomorrow.')
+      return
+    }
+
     setGeneratingTryOn(prev => ({ ...prev, [outfitKey]: true }))
 
     try {
@@ -249,6 +309,16 @@ export default function WardrobePage() {
         alert('Please upload some photos of yourself in your profile first to use the try-on feature!')
         return
       }
+
+      // Deduct credit before API call
+      const deductResult = await deductCredit(user.id, 'try-on')
+      if (!deductResult.success) {
+        alert(deductResult.message || 'Failed to deduct credit')
+        return
+      }
+
+      // Update local credit display
+      setCreditInfo(prev => prev ? { ...prev, credits_remaining: deductResult.credits_remaining || 0 } : null)
 
       // Get the actual wardrobe items
       const items = outfitItems.map(it => wardrobeItems.find(w => w.id === it.id)).filter((item): item is WardrobeItem => item !== undefined)
@@ -297,13 +367,15 @@ export default function WardrobePage() {
         setTryOnDescriptions(prev => ({ ...prev, [outfitKey]: data.description }))
       }
       
-      // Show success message with appropriate info
-      if (!data.generatedImage && data.description) {
-        console.log('ℹ️ Generated styling advice (no image)')
+      // Show success message with credit info
+      if (data.generatedImage) {
+        console.log(`✅ Try-on generated! Credits remaining: ${deductResult.credits_remaining}`)
       }
     } catch (error) {
       console.error('Try-on generation error:', error)
-      alert('Failed to generate try-on. Please try again.')
+      alert('Failed to generate try-on. Your credit was not deducted.')
+      // Reload credits to ensure accuracy
+      await loadCredits()
     } finally {
       setGeneratingTryOn(prev => ({ ...prev, [outfitKey]: false }))
     }
@@ -322,14 +394,31 @@ export default function WardrobePage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-950 border-b-2 border-neutral-200 dark:border-neutral-800">
         <div className="container mx-auto px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/profile" className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-sm border-2 border-neutral-300 dark:border-neutral-600">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div className="p-3 bg-neutral-900 dark:bg-neutral-100 rounded-sm border-2 border-neutral-900 dark:border-neutral-100">
-              <Shirt className="h-6 w-6 text-neutral-50 dark:text-neutral-900" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/profile" className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-sm border-2 border-neutral-300 dark:border-neutral-600">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <div className="p-3 bg-neutral-900 dark:bg-neutral-100 rounded-sm border-2 border-neutral-900 dark:border-neutral-100">
+                <Shirt className="h-6 w-6 text-neutral-50 dark:text-neutral-900" />
+              </div>
+              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">My Wardrobe</h1>
             </div>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-tight">My Wardrobe</h1>
+            
+            {/* Credits Display */}
+            {creditInfo && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900 border-2 border-amber-300 dark:border-amber-700 rounded-sm">
+                <Coins className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                    {formatCreditDisplay(creditInfo)} Credits
+                  </span>
+                  <span className="text-xs text-amber-700 dark:text-amber-300">
+                    Resets in {getTimeUntilReset(creditInfo)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

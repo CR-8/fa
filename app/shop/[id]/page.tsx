@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { products } from "@/data/products"
-import { ArrowLeft, Heart, Share, ShoppingCart, Sparkles, Camera, X, Star, Check } from "lucide-react"
+import { ArrowLeft, Heart, Share, ShoppingCart, Sparkles, Camera, X, Star, Check, Loader2, Coins } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+import { getUserCredits, deductCredit, hasCredits, formatCreditDisplay, getTimeUntilReset } from "@/lib/credits"
+import type { CreditInfo } from "@/lib/credits"
 
 interface ProductDetailPageProps {
   params: {
@@ -17,14 +20,13 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const product = products.find((p) => p.id === params.id)
-  const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false)
   const [tryOnResult, setTryOnResult] = useState<any>(null)
   const [isGeneratingTryOn, setIsGeneratingTryOn] = useState(false)
   const [userImages, setUserImages] = useState<string[]>([])
-  const [autoTryOnImage, setAutoTryOnImage] = useState<string | null>(null)
-  const [isGeneratingAutoTryOn, setIsGeneratingAutoTryOn] = useState(false)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState<string>(product?.colors[0] || "")
+  const [creditInfo, setCreditInfo] = useState<CreditInfo | null>(null)
+  const [showingTryOn, setShowingTryOn] = useState(false) // Track if we're showing try-on vs product image
 
   // Load user images from localStorage
   useEffect(() => {
@@ -42,38 +44,21 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     }
   }, [])
 
-  // Auto-generate try-on image when user images are available
+  // Load credits on mount
   useEffect(() => {
-    if (userImages.length > 0 && !autoTryOnImage && !isGeneratingAutoTryOn) {
-      generateAutoTryOn()
+    loadCredits()
+  }, [])
+
+  const loadCredits = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const credits = await getUserCredits(user.id)
+      setCreditInfo(credits)
     }
-  }, [userImages, autoTryOnImage, isGeneratingAutoTryOn])
+  }
 
   if (!product) {
     notFound()
-  }
-
-  const generateAutoTryOn = async () => {
-    if (userImages.length === 0 || isGeneratingAutoTryOn) return
-    setIsGeneratingAutoTryOn(true)
-    try {
-      const response = await fetch("/api/try-on", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          personImages: userImages, // Pass all user photos for better results
-        }),
-      })
-      const data = await response.json()
-      if (data.success && data.generatedImage) {
-        setAutoTryOnImage(data.generatedImage)
-      }
-    } catch (error) {
-      console.error("Auto try-on error:", error)
-    } finally {
-      setIsGeneratingAutoTryOn(false)
-    }
   }
 
   const handleTryOn = async () => {
@@ -81,28 +66,61 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       alert("Please upload some photos in your profile page first to use the try-on feature.")
       return
     }
+
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('Please sign in to use try-on feature')
+      return
+    }
+
+    // Check if user has enough credits
+    const hasEnough = await hasCredits(user.id)
+    if (!hasEnough) {
+      alert('⚠️ No credits remaining! You get 10 free credits daily. Credits will reset tomorrow.')
+      return
+    }
+
     setIsGeneratingTryOn(true)
-    setTryOnDialogOpen(true)
+    setShowingTryOn(true) // Switch to try-on view
+
     try {
+      // Deduct credit before API call
+      const deductResult = await deductCredit(user.id, 'try-on')
+      if (!deductResult.success) {
+        alert(deductResult.message || 'Failed to deduct credit')
+        setIsGeneratingTryOn(false)
+        setShowingTryOn(false)
+        return
+      }
+
+      // Update local credit display
+      setCreditInfo(prev => prev ? { ...prev, credits_remaining: deductResult.credits_remaining || 0 } : null)
+
       const response = await fetch("/api/try-on", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
-          personImages: userImages, // Pass all user photos for better results
+          personImages: userImages,
         }),
       })
       const data = await response.json()
       if (data.success) {
         setTryOnResult(data)
+        console.log(`✅ Try-on generated! Credits remaining: ${deductResult.credits_remaining}`)
       } else {
         alert(data.message || "Failed to generate try-on image. Please try again.")
-        setTryOnDialogOpen(false)
+        setShowingTryOn(false)
+        // Reload credits to ensure accuracy
+        await loadCredits()
       }
     } catch (error) {
       console.error("Try-on error:", error)
-      alert("Error generating try-on image. Please try again.")
-      setTryOnDialogOpen(false)
+      alert("Error generating try-on image. Your credit was not deducted.")
+      setShowingTryOn(false)
+      // Reload credits to ensure accuracy
+      await loadCredits()
     } finally {
       setIsGeneratingTryOn(false)
     }
@@ -110,48 +128,93 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-
+      {/* Header with Credits */}
+      <div className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-950 border-b-2 border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/shop" className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-sm border-2 border-neutral-300 dark:border-neutral-600">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            
+            {/* Credits Display */}
+            {creditInfo && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900 border-2 border-amber-300 dark:border-amber-700 rounded-sm">
+                <Coins className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                    {formatCreditDisplay(creditInfo)} Credits
+                  </span>
+                  <span className="text-xs text-amber-700 dark:text-amber-300">
+                    Resets in {getTimeUntilReset(creditInfo)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Images Section */}
           <div className="space-y-6">
             {/* Virtual Try-On Card */}
             <Card className="border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)]">
               <CardHeader className="pb-3 border-b-2 border-neutral-200 dark:border-neutral-800">
-                <CardTitle className="text-lg flex items-center gap-2 font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
-                  <Sparkles className="h-5 w-5" />
-                  Virtual Try-On
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2 font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wide">
+                    <Sparkles className="h-5 w-5" />
+                    {showingTryOn && tryOnResult ? 'Your Try-On Result' : 'Virtual Try-On'}
+                  </CardTitle>
+                  {showingTryOn && tryOnResult && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowingTryOn(false)
+                        setTryOnResult(null)
+                      }}
+                      className="border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase text-xs"
+                    >
+                      Show Product
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 <div className="aspect-[3/4] relative rounded-sm overflow-hidden bg-neutral-200 dark:bg-neutral-800 border-2 border-neutral-300 dark:border-neutral-700">
-                  {userImages.length > 0 ? (
-                    autoTryOnImage ? (
-                      <Image
-                        src={autoTryOnImage}
-                        alt={`${product.name} AI try-on preview`}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : isGeneratingAutoTryOn ? (
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <div className="animate-spin rounded-sm h-8 w-8 border-2 border-neutral-900 dark:border-neutral-100 border-t-transparent mb-4"></div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center font-medium uppercase tracking-wide">
-                          Creating your personalized preview...
-                        </p>
-                      </div>
-                    ) : (
-                      <Image
-                        src={product.tryOnPreview || product.images[0]}
-                        alt={`${product.name} try-on preview`}
-                        fill
-                        className="object-cover"
-                        priority
-                      />
-                    )
+                  {isGeneratingTryOn ? (
+                    // Loading spinner while generating
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <Loader2 className="h-12 w-12 animate-spin text-neutral-900 dark:text-neutral-100 mb-4" />
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center font-medium uppercase tracking-wide">
+                        Generating your try-on...
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-500 text-center mt-2">
+                        This may take 10-20 seconds
+                      </p>
+                    </div>
+                  ) : showingTryOn && tryOnResult?.generatedImage ? (
+                    // Show try-on result
+                    <Image
+                      src={tryOnResult.generatedImage}
+                      alt={`${product.name} try-on result`}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  ) : userImages.length > 0 ? (
+                    // Show product image when user has photos
+                    <Image
+                      src={product.tryOnPreview || product.images[0]}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
                   ) : (
+                    // No user photos uploaded
                     <div className="flex flex-col items-center justify-center h-full text-center p-6">
                       <Camera className="h-12 w-12 text-neutral-500 dark:text-neutral-400 mb-4" />
                       <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 font-medium">
@@ -163,15 +226,22 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     </div>
                   )}
                 </div>
+                
+                {/* Try-On Button */}
                 <Button
-                  className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide"
-                  disabled={userImages.length === 0}
+                  className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={userImages.length === 0 || isGeneratingTryOn}
                   onClick={handleTryOn}
                 >
-                  {userImages.length > 0 ? (
+                  {isGeneratingTryOn ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : userImages.length > 0 ? (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Try On Now
+                      Try On Now (1 Credit)
                     </>
                   ) : (
                     <>
@@ -180,6 +250,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     </>
                   )}
                 </Button>
+
+                {/* Description if try-on result available */}
+                {showingTryOn && tryOnResult?.description && (
+                  <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-sm border-2 border-neutral-200 dark:border-neutral-700">
+                    <p className="text-sm text-neutral-700 dark:text-neutral-300 font-medium">
+                      {tryOnResult.description}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -301,70 +380,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           </div>
         </div>
       </div>
-
-      {/* Try-on Modal Overlay */}
-      {tryOnDialogOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <Sparkles className="h-6 w-6 text-primary" />
-                  Virtual Try-On Result
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTryOnDialogOpen(false)}
-                  className="hover:bg-muted"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            <div className="p-6">
-              {isGeneratingTryOn ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-3 border-primary border-t-transparent mb-4"></div>
-                  <p className="text-lg font-medium text-center mb-2">Generating your personalized try-on image...</p>
-                  <p className="text-sm text-muted-foreground text-center">This may take 10-20 seconds</p>
-                </div>
-              ) : tryOnResult ? (
-                <div className="space-y-6">
-                  <div className="aspect-[3/4] relative rounded-xl overflow-hidden shadow-lg">
-                    {tryOnResult.generatedImage ? (
-                      <Image
-                        src={tryOnResult.generatedImage}
-                        alt="AI generated try-on"
-                        fill
-                        className="object-cover"
-                        priority
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full bg-muted p-6 rounded-xl">
-                        <p className="text-muted-foreground text-center">{tryOnResult.description}</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="text-xl font-bold">{tryOnResult.productName}</h4>
-                    <p className="text-muted-foreground leading-relaxed">{tryOnResult.description}</p>
-                    {tryOnResult.usedFallback && (
-                      <Badge variant="secondary" className="w-fit">
-                        Enhanced Styling Mode
-                      </Badge>
-                    )}
-                  </div>
-                  <Button className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all">
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add to Cart
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
