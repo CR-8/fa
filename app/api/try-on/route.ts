@@ -115,6 +115,7 @@ async function processTryOnRequest(body: any): Promise<Response> {
   const clothingImages = body.clothingImages || (clothingImage ? [clothingImage] : []);
   const category = body.category;
   const productId = body.productId;
+  const occasion = body.occasion; // Get the occasion/vibe context
 
   let product: Product | undefined;
   if (productId) {
@@ -146,7 +147,8 @@ async function processTryOnRequest(body: any): Promise<Response> {
       productImageUrls: finalClothingImages, // Pass all product/clothing images
       productName: product ? product.name : `Wardrobe ${category}`,
       productDescription: product ? product.description : `A ${category} item from your wardrobe`,
-      category: category || product!.category
+      category: category || product!.category,
+      occasion: occasion // Pass the occasion context
     });
 
     // Prepare response based on result

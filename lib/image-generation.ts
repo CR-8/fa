@@ -6,6 +6,7 @@ interface ImageGenerationOptions {
   productName: string;
   productDescription: string;
   category: string;
+  occasion?: string; // Optional occasion/vibe context (e.g., "business meeting", "casual party")
 }
 
 interface ImageGenerationResult {
@@ -35,37 +36,66 @@ try {
   console.error("❌ Failed to initialize Google AI:", error);
 }
 
-// Helper function to fetch image from URL and convert to base64
-async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
-  try {
-    console.log(`📥 Fetching image from URL: ${url}`);
-    
-    // Handle relative URLs by converting to absolute
-    let absoluteUrl = url;
-    if (url.startsWith('/')) {
-      absoluteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${url}`;
-      console.log(`🔗 Converted to absolute URL: ${absoluteUrl}`);
+// Helper function to fetch image from URL and convert to base64 with retry logic
+async function fetchImageAsBase64(url: string, retries = 3): Promise<{ data: string; mimeType: string }> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`📥 Fetching image from URL (attempt ${attempt}/${retries}): ${url}`);
+      
+      // Handle relative URLs by converting to absolute
+      let absoluteUrl = url;
+      if (url.startsWith('/')) {
+        absoluteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${url}`;
+        console.log(`🔗 Converted to absolute URL: ${absoluteUrl}`);
+      }
+
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      try {
+        const response = await fetch(absoluteUrl, { 
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64 = buffer.toString('base64');
+
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        const mimeType = contentType.startsWith('image/') ? contentType : 'image/jpeg';
+
+        console.log(`✅ Image fetched successfully - Size: ${Math.round(arrayBuffer.byteLength / 1024)}KB, Type: ${mimeType}`);
+        
+        return { data: base64, mimeType };
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        throw fetchError;
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      console.error(`❌ Error fetching image (attempt ${attempt}/${retries}):`, error);
+      
+      // If this isn't the last attempt, wait before retrying with exponential backoff
+      if (attempt < retries) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5 seconds
+        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
     }
-
-    const response = await fetch(absoluteUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
-
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const mimeType = contentType.startsWith('image/') ? contentType : 'image/jpeg';
-
-    console.log(`✅ Image fetched successfully - Size: ${Math.round(arrayBuffer.byteLength / 1024)}KB, Type: ${mimeType}`);
-    
-    return { data: base64, mimeType };
-  } catch (error) {
-    console.error('❌ Error fetching image:', error);
-    throw new Error(`Failed to fetch image from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+  
+  throw new Error(`Failed to fetch image from URL after ${retries} attempts: ${lastError?.message || 'Unknown error'}`);
 }
 
 // Helper function to fetch multiple images concurrently
@@ -82,7 +112,7 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
     throw new Error("Google AI not initialized - check your API key");
   }
 
-  const { userImageUrls, productImageUrls, productName, productDescription, category } = options;
+  const { userImageUrls, productImageUrls, productName, productDescription, category, occasion } = options;
 
   // Fetch all user images and product images
   const userImageResults = await fetchMultipleImages(userImageUrls);
@@ -101,44 +131,24 @@ async function generateWithGemini(options: ImageGenerationOptions): Promise<stri
     }
   });
 
-  // Enhanced prompt that references multiple images
-  const prompt = `
-You are given ${userImageUrls.length} reference image(s) of a person and ${productImageUrls.length} image(s) of a ${category} product (${productName}).
+  // Build occasion context if provided
+  const occasionContext = occasion 
+    ? ` styled appropriately for ${occasion}`
+    : '';
 
-Task: Create a realistic virtual try-on image showing the person wearing the product.
+  // Concise, focused prompt with STRICT identity preservation
+  const prompt = `Virtual try-on task: Show the EXACT SAME PERSON from the user photos wearing the clothing items.
 
-Instructions for User Images (${userImageUrls.length} image${userImageUrls.length > 1 ? 's' : ''}):
-- Analyze ALL provided user images to understand: body type, proportions, skin tone, posture, and style preferences
-- Use the best-quality or most suitable user image as the base for the try-on
-- Maintain consistency with the person's appearance across all reference images
+INPUT: ${userImageUrls.length} user photo(s) + ${productImageUrls.length} ${category} item(s)${occasionContext}
 
-Instructions for Product Images (${productImageUrls.length} image${productImageUrls.length > 1 ? 's' : ''}):
-- Analyze ALL product images to understand: design details, fabric texture, color accuracy, and fit characteristics
-- Capture details from multiple angles if multiple product images are provided
-- Ensure accurate representation of patterns, logos, stitching, and material properties
+ABSOLUTE REQUIREMENTS:
+1. IDENTITY LOCK: Keep the EXACT person - same gender, race, age, body type, face, hair, skin color
+2. NO MORPHING: Do NOT change the person's appearance, features, or body in ANY way
+3. CLOTHING ONLY: Replace ONLY the clothing - everything else stays identical
+4. SHOW ALL ITEMS: Display all ${productImageUrls.length} clothing piece(s) completely
+5. PHOTOREALISTIC: Natural lighting, proper fit, realistic fabric on the SAME person
 
-Positive Prompt:
-- Keep the person's face, hair, skin tone, body shape, pose, and background completely unchanged
-- Replace only their current clothing with the ${category} from the product images
-- Perfect alignment: clothing must fit their body naturally with correct proportions based on body analysis
-- Realistic fabric texture, stitching, folds, and draping matching the product images
-- Natural lighting, shadows, and reflections consistent with the original photo
-- Seamless blending, no visible edits
-- Professional fashion photography quality
-- Full body image, high resolution
-- Photorealistic detail, ultra-sharp, studio-grade output
-- If multiple product views are available, synthesize them for the most accurate representation
-
-Negative Prompt:
-- Blurry, low-resolution, distorted, deformed
-- Extra limbs, extra fingers, broken body parts
-- Warped clothing, unnatural fit, misaligned proportions
-- Cartoonish, painted, CGI, or fake-looking
-- Overexposed, underexposed, inconsistent shadows
-- Cropped body or missing parts
-- Visible artifacts, watermarks, or overlays
-- Mixing features from different product images incorrectly
-`;
+STRICT: The person in the output MUST be identical to the person in the user photos. Same individual, just wearing different clothes.`;
 
   // Build the request parts array with all images
   const requestParts: any[] = [{ text: prompt }];

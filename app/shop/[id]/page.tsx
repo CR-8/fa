@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { products } from "@/data/products"
-import { ArrowLeft, Heart, Share, ShoppingCart, Sparkles, Camera, X, Star, Check, Loader2, Coins } from "lucide-react"
+import { ArrowLeft, Heart, Share, ShoppingCart, Sparkles, Camera, X, Star, Check, Loader2, Coins, RotateCcw } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -27,6 +27,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [selectedColor, setSelectedColor] = useState<string>(product?.colors[0] || "")
   const [creditInfo, setCreditInfo] = useState<CreditInfo | null>(null)
   const [showingTryOn, setShowingTryOn] = useState(false) // Track if we're showing try-on vs product image
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [retryDisabledUntil, setRetryDisabledUntil] = useState<number | null>(null)
+  const [retryCountdown, setRetryCountdown] = useState<number>(0)
+  const [generationCooldown, setGenerationCooldown] = useState<number>(0)
+  const [lastGenerationTime, setLastGenerationTime] = useState<number>(0)
 
   // Load user images from localStorage
   useEffect(() => {
@@ -42,12 +47,65 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         console.warn("Failed to parse saved user images:", error)
       }
     }
+
+    // Load global generation cooldown from localStorage
+    const savedCooldown = localStorage.getItem("globalGenerationCooldown")
+    if (savedCooldown) {
+      const cooldownEnd = parseInt(savedCooldown)
+      if (cooldownEnd > Date.now()) {
+        setLastGenerationTime(cooldownEnd - 60000) // Reconstruct last generation time
+      }
+    }
   }, [])
 
   // Load credits on mount
   useEffect(() => {
     loadCredits()
   }, [])
+
+  // Countdown timer for retry button
+  useEffect(() => {
+    if (!retryDisabledUntil) {
+      setRetryCountdown(0)
+      return
+    }
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((retryDisabledUntil - Date.now()) / 1000))
+      setRetryCountdown(remaining)
+      
+      if (remaining <= 0) {
+        setRetryDisabledUntil(null)
+        clearInterval(interval)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [retryDisabledUntil])
+
+  // Generation cooldown timer (60 seconds)
+  useEffect(() => {
+    if (lastGenerationTime === 0) {
+      setGenerationCooldown(0)
+      return
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastGenerationTime
+      const remaining = Math.max(0, Math.ceil((60000 - elapsed) / 1000))
+      setGenerationCooldown(remaining)
+      
+      if (remaining <= 0) {
+        clearInterval(interval)
+        localStorage.removeItem("globalGenerationCooldown")
+      } else {
+        // Save cooldown end time to localStorage for persistence
+        localStorage.setItem("globalGenerationCooldown", (lastGenerationTime + 60000).toString())
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [lastGenerationTime])
 
   const loadCredits = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -63,32 +121,44 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
   const handleTryOn = async () => {
     if (userImages.length === 0) {
-      alert("Please upload some photos in your profile page first to use the try-on feature.")
+      setErrorMessage("Please upload some photos in your profile page first to use the try-on feature.")
+      return
+    }
+
+    // Check cooldown
+    if (generationCooldown > 0) {
+      setErrorMessage(`⏳ Please wait ${generationCooldown} seconds before generating another try-on.`)
       return
     }
 
     // Check authentication
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      alert('Please sign in to use try-on feature')
+      setErrorMessage('Please sign in to use try-on feature')
       return
     }
 
     // Check if user has enough credits
     const hasEnough = await hasCredits(user.id)
     if (!hasEnough) {
-      alert('⚠️ No credits remaining! You get 10 free credits daily. Credits will reset tomorrow.')
+      setErrorMessage('⚠️ No credits remaining! You get 10 free credits daily. Credits will reset tomorrow.')
       return
     }
 
+    // Clear previous error
+    setErrorMessage(null)
     setIsGeneratingTryOn(true)
     setShowingTryOn(true) // Switch to try-on view
+    
+    const now = Date.now()
+    setLastGenerationTime(now) // Start cooldown
+    localStorage.setItem("globalGenerationCooldown", (now + 60000).toString())
 
     try {
       // Deduct credit before API call
       const deductResult = await deductCredit(user.id, 'try-on')
       if (!deductResult.success) {
-        alert(deductResult.message || 'Failed to deduct credit')
+        setErrorMessage(deductResult.message || 'Failed to deduct credit')
         setIsGeneratingTryOn(false)
         setShowingTryOn(false)
         return
@@ -108,17 +178,27 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       const data = await response.json()
       if (data.success) {
         setTryOnResult(data)
+        setErrorMessage(null)
         console.log(`✅ Try-on generated! Credits remaining: ${deductResult.credits_remaining}`)
       } else {
-        alert(data.message || "Failed to generate try-on image. Please try again.")
+        // AI generation error - show error and enable retry after 30 seconds
+        setErrorMessage(
+          data.error?.includes('image') || data.error?.includes('generation') || data.error?.includes('STOP')
+            ? "⚠️ AI generation encountered an error. Please wait 30-40 seconds before retrying."
+            : data.message || "❌ Unexpected error occurred. Please retry in a moment."
+        )
         setShowingTryOn(false)
+        // Disable retry for 35 seconds (middle of 30-40 range)
+        setRetryDisabledUntil(Date.now() + 35000)
         // Reload credits to ensure accuracy
         await loadCredits()
       }
     } catch (error) {
       console.error("Try-on error:", error)
-      alert("Error generating try-on image. Your credit was not deducted.")
+      setErrorMessage("❌ Network error occurred. Please wait 30-40 seconds before retrying.")
       setShowingTryOn(false)
+      // Disable retry for 35 seconds
+      setRetryDisabledUntil(Date.now() + 35000)
       // Reload credits to ensure accuracy
       await loadCredits()
     } finally {
@@ -228,28 +308,60 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 </div>
                 
                 {/* Try-On Button */}
-                <Button
-                  className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={userImages.length === 0 || isGeneratingTryOn}
-                  onClick={handleTryOn}
-                >
-                  {isGeneratingTryOn ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : userImages.length > 0 ? (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Try On Now (1 Credit)
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="h-4 w-4 mr-2" />
-                      Upload Photos First
-                    </>
+                <div className="space-y-2">
+                  {/* Error Message */}
+                  {errorMessage && (
+                    <div className="p-3 bg-red-50 dark:bg-red-950 border-2 border-red-300 dark:border-red-800 rounded-sm">
+                      <p className="text-sm text-red-800 dark:text-red-200 font-medium">
+                        {errorMessage}
+                      </p>
+                    </div>
                   )}
-                </Button>
+
+                  <Button
+                    className="w-full h-12 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={userImages.length === 0 || isGeneratingTryOn || generationCooldown > 0}
+                    onClick={handleTryOn}
+                  >
+                    {isGeneratingTryOn ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : generationCooldown > 0 ? (
+                      <>
+                        ⏳ Wait {generationCooldown}s
+                      </>
+                    ) : userImages.length > 0 ? (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Try On Now (1 Credit)
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-4 w-4 mr-2" />
+                        Upload Photos First
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Retry Button - Show only when try-on result exists */}
+                  {showingTryOn && tryOnResult && !isGeneratingTryOn && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleTryOn}
+                      disabled={isGeneratingTryOn || retryCountdown > 0 || generationCooldown > 0}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      {generationCooldown > 0 
+                        ? `Wait ${generationCooldown}s` 
+                        : retryCountdown > 0 
+                        ? `Wait ${retryCountdown}s to Retry` 
+                        : 'Retry Generation (1 Credit)'}
+                    </Button>
+                  )}
+                </div>
 
                 {/* Description if try-on result available */}
                 {showingTryOn && tryOnResult?.description && (

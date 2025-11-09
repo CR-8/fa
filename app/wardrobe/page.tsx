@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Shirt, Plus, X, Save, Loader2, ArrowLeft, Coins } from "lucide-react"
+import { Shirt, Plus, X, Save, Loader2, ArrowLeft, Coins, RotateCcw } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { supabase, WardrobeItem } from "@/lib/supabase"
@@ -35,6 +35,11 @@ export default function WardrobePage() {
   const [tryOnDescriptions, setTryOnDescriptions] = useState<{[key: string]: string}>({})
   const [generatingTryOn, setGeneratingTryOn] = useState<{[key: string]: boolean}>({})
   const [errorMsg, setErrorMsg] = useState<string>("")
+  const [tryOnErrors, setTryOnErrors] = useState<{[key: string]: string}>({})
+  const [retryDisabledUntil, setRetryDisabledUntil] = useState<{[key: string]: number}>({})
+  const [retryCountdowns, setRetryCountdowns] = useState<{[key: string]: number}>({})
+  const [globalGenerationCooldown, setGlobalGenerationCooldown] = useState<number>(0)
+  const [lastGlobalGenerationTime, setLastGlobalGenerationTime] = useState<number>(0)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -50,7 +55,65 @@ export default function WardrobePage() {
   useEffect(() => {
     loadWardrobeItems()
     loadCredits()
+    
+    // Load global generation cooldown from localStorage
+    const savedCooldown = localStorage.getItem("globalGenerationCooldown")
+    if (savedCooldown) {
+      const cooldownEnd = parseInt(savedCooldown)
+      if (cooldownEnd > Date.now()) {
+        setLastGlobalGenerationTime(cooldownEnd - 60000) // Reconstruct last generation time
+      }
+    }
   }, [])
+
+  // Countdown timer for retry buttons
+  useEffect(() => {
+    const intervals: NodeJS.Timeout[] = []
+    
+    Object.entries(retryDisabledUntil).forEach(([outfitKey, disabledUntil]) => {
+      const interval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((disabledUntil - Date.now()) / 1000))
+        setRetryCountdowns(prev => ({ ...prev, [outfitKey]: remaining }))
+        
+        if (remaining <= 0) {
+          setRetryDisabledUntil(prev => {
+            const updated = { ...prev }
+            delete updated[outfitKey]
+            return updated
+          })
+          clearInterval(interval)
+        }
+      }, 1000)
+      
+      intervals.push(interval)
+    })
+
+    return () => intervals.forEach(interval => clearInterval(interval))
+  }, [retryDisabledUntil])
+
+  // Global generation cooldown timer (60 seconds)
+  useEffect(() => {
+    if (lastGlobalGenerationTime === 0) {
+      setGlobalGenerationCooldown(0)
+      return
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastGlobalGenerationTime
+      const remaining = Math.max(0, Math.ceil((60000 - elapsed) / 1000))
+      setGlobalGenerationCooldown(remaining)
+      
+      if (remaining <= 0) {
+        clearInterval(interval)
+        localStorage.removeItem("globalGenerationCooldown")
+      } else {
+        // Save cooldown end time to localStorage for persistence
+        localStorage.setItem("globalGenerationCooldown", (lastGlobalGenerationTime + 60000).toString())
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [lastGlobalGenerationTime])
 
   const loadCredits = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -270,6 +333,15 @@ export default function WardrobePage() {
     const outfitKey = `rec-${recIndex}`
     console.log('🎬 Starting try-on generation for outfit:', outfitKey)
     
+    // Check global cooldown
+    if (globalGenerationCooldown > 0) {
+      setTryOnErrors(prev => ({ 
+        ...prev, 
+        [outfitKey]: `⏳ Please wait ${globalGenerationCooldown} seconds before generating another try-on.` 
+      }))
+      return
+    }
+
     // Check credits before starting
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -280,11 +352,22 @@ export default function WardrobePage() {
     // Check if user has enough credits
     const hasEnough = await hasCredits(user.id)
     if (!hasEnough) {
-      alert('⚠️ No credits remaining! You get 10 free credits daily. Credits will reset tomorrow.')
+      setTryOnErrors(prev => ({ ...prev, [outfitKey]: '⚠️ No credits remaining! You get 10 free credits daily. Credits will reset tomorrow.' }))
       return
     }
 
+    // Clear previous error for this outfit
+    setTryOnErrors(prev => {
+      const updated = { ...prev }
+      delete updated[outfitKey]
+      return updated
+    })
+
     setGeneratingTryOn(prev => ({ ...prev, [outfitKey]: true }))
+    
+    const now = Date.now()
+    setLastGlobalGenerationTime(now) // Start global cooldown
+    localStorage.setItem("globalGenerationCooldown", (now + 60000).toString())
 
     try {
       // Get user photos from localStorage (same logic as profile page)
@@ -306,14 +389,14 @@ export default function WardrobePage() {
       const userPhotos = getUserPhotos()
 
       if (userPhotos.length === 0) {
-        alert('Please upload some photos of yourself in your profile first to use the try-on feature!')
+        setTryOnErrors(prev => ({ ...prev, [outfitKey]: 'Please upload some photos of yourself in your profile first to use the try-on feature!' }))
         return
       }
 
       // Deduct credit before API call
       const deductResult = await deductCredit(user.id, 'try-on')
       if (!deductResult.success) {
-        alert(deductResult.message || 'Failed to deduct credit')
+        setTryOnErrors(prev => ({ ...prev, [outfitKey]: deductResult.message || 'Failed to deduct credit' }))
         return
       }
 
@@ -344,7 +427,8 @@ export default function WardrobePage() {
         body: JSON.stringify({
           personImages: userPhotos, // Pass all user photos
           clothingImages: clothingImages, // Pass all clothing images from outfit
-          category: items[0].category
+          category: items[0].category,
+          occasion: occasion || undefined // Pass the occasion/vibe context
         })
       })
 
@@ -352,6 +436,20 @@ export default function WardrobePage() {
 
       const data = await response.json()
       console.log('📦 Try-on response:', { success: data.success, hasImage: !!data.generatedImage, outfitKey })
+      
+      if (!data.success) {
+        // AI generation error - show error and enable retry after 35 seconds
+        setTryOnErrors(prev => ({ 
+          ...prev, 
+          [outfitKey]: data.error?.includes('image') || data.error?.includes('generation') || data.error?.includes('STOP')
+            ? "⚠️ AI generation encountered an error. Please wait 30-40 seconds before retrying."
+            : data.message || "❌ Unexpected error occurred. Please retry in a moment."
+        }))
+        // Disable retry for 35 seconds (middle of 30-40 range)
+        setRetryDisabledUntil(prev => ({ ...prev, [outfitKey]: Date.now() + 35000 }))
+        await loadCredits()
+        return
+      }
       
       // Store both the generated image (if available) and description
       if (data.generatedImage) {
@@ -373,7 +471,12 @@ export default function WardrobePage() {
       }
     } catch (error) {
       console.error('Try-on generation error:', error)
-      alert('Failed to generate try-on. Your credit was not deducted.')
+      setTryOnErrors(prev => ({ 
+        ...prev, 
+        [outfitKey]: "❌ Network error occurred. Please wait 30-40 seconds before retrying."
+      }))
+      // Disable retry for 35 seconds
+      setRetryDisabledUntil(prev => ({ ...prev, [outfitKey]: Date.now() + 35000 }))
       // Reload credits to ensure accuracy
       await loadCredits()
     } finally {
@@ -433,9 +536,9 @@ export default function WardrobePage() {
                 Add Clothing Item
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm">
+            <DialogContent className="max-w-[95vw] w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl h-[90vh] overflow-y-auto bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 rounded-sm">
               <DialogHeader>
-                <DialogTitle className="text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wide">Add to Wardrobe</DialogTitle>
+                <DialogTitle className="text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wide text-xl sm:text-2xl">Add to Wardrobe</DialogTitle>
                 <DialogDescription className="text-neutral-600 dark:text-neutral-400 font-medium">
                   Upload a photo of your clothing item and add details to build your digital wardrobe.
                 </DialogDescription>
@@ -735,13 +838,45 @@ export default function WardrobePage() {
                             </div>
                           </div>
 
+                          {/* Error Message */}
+                          {tryOnErrors[outfitKey] && (
+                            <div className="px-3 py-2 bg-red-50 dark:bg-red-950 border-2 border-red-300 dark:border-red-800 rounded-sm max-w-xs">
+                              <p className="text-xs text-red-800 dark:text-red-200 font-medium text-center">
+                                {tryOnErrors[outfitKey]}
+                              </p>
+                            </div>
+                          )}
+
                           {!tryOnImages[outfitKey] && !generatingTryOn[outfitKey] && (
                             <Button
                               size="sm"
                               onClick={() => generateOutfitTryOn(idx, rec.items)}
-                              className="text-xs h-10 px-4 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide"
+                              disabled={retryCountdowns[outfitKey] > 0 || globalGenerationCooldown > 0}
+                              className="text-xs h-10 px-4 bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-sm border-2 border-neutral-900 dark:border-neutral-100 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Generate Try-on
+                              {globalGenerationCooldown > 0 
+                                ? `⏳ Wait ${globalGenerationCooldown}s` 
+                                : retryCountdowns[outfitKey] > 0 
+                                ? `Wait ${retryCountdowns[outfitKey]}s` 
+                                : 'Generate Try-on (1 Credit)'}
+                            </Button>
+                          )}
+                          
+                          {/* Retry Button - Show only when try-on exists and not generating */}
+                          {tryOnImages[outfitKey] && !generatingTryOn[outfitKey] && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => generateOutfitTryOn(idx, rec.items)}
+                              disabled={retryCountdowns[outfitKey] > 0 || globalGenerationCooldown > 0}
+                              className="text-xs h-10 px-4 border-2 border-neutral-300 dark:border-neutral-600 rounded-sm font-bold uppercase tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <RotateCcw className="h-3 w-3 mr-2" />
+                              {globalGenerationCooldown > 0 
+                                ? `⏳ Wait ${globalGenerationCooldown}s` 
+                                : retryCountdowns[outfitKey] > 0 
+                                ? `Wait ${retryCountdowns[outfitKey]}s to Retry` 
+                                : 'Retry (1 Credit)'}
                             </Button>
                           )}
                         </div>

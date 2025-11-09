@@ -20,6 +20,10 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'res.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
   async headers() {

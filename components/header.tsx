@@ -18,8 +18,6 @@ const mainNavItems = [
   { href: "/", label: "HOME", icon: Home },
   { href: "/shop", label: "SHOP", icon: ShoppingBag },
   { href: "/wardrobe", label: "WARDROBE", icon: Shirt },
-  { href: "/profile", label: "YOU", icon: User }
-
 ]
 
 export function Header() {
