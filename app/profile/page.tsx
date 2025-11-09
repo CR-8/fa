@@ -129,58 +129,8 @@ export default function ProfilePage() {
     // Load measurements from Supabase
     const loadMeasurements = async () => {
       try {
-        const userId = authUser.id
-
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('height, shoe_size, measurements')
-          .eq('user_id', userId)
-          .single()
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error loading measurements:', error)
-          // Fallback to localStorage
-          const savedMeasurements = localStorage.getItem('userMeasurements')
-          if (savedMeasurements) {
-            try {
-              const parsed = JSON.parse(savedMeasurements)
-              setMeasurements(parsed)
-            } catch (error) {
-              console.warn('Failed to parse saved measurements:', error)
-            }
-          }
-        } else if (data) {
-          // Load from database
-          setMeasurements({
-            height: data.height || '',
-            shoeSize: data.shoe_size || '',
-            chest: data.measurements?.chest || '',
-            waist: data.measurements?.waist || '',
-            hips: data.measurements?.hips || ''
-          })
-          // Update localStorage as backup
-          localStorage.setItem('userMeasurements', JSON.stringify({
-            height: data.height || '',
-            shoeSize: data.shoe_size || '',
-            chest: data.measurements?.chest || '',
-            waist: data.measurements?.waist || '',
-            hips: data.measurements?.hips || ''
-          }))
-        } else {
-          // No data in database, try localStorage
-          const savedMeasurements = localStorage.getItem('userMeasurements')
-          if (savedMeasurements) {
-            try {
-              const parsed = JSON.parse(savedMeasurements)
-              setMeasurements(parsed)
-            } catch (error) {
-              console.warn('Failed to parse saved measurements:', error)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading measurements:', error)
-        // Fallback to localStorage
+        // For now, measurements are only stored in localStorage
+        // The profiles table doesn't have measurement fields yet
         const savedMeasurements = localStorage.getItem('userMeasurements')
         if (savedMeasurements) {
           try {
@@ -190,6 +140,8 @@ export default function ProfilePage() {
             console.warn('Failed to parse saved measurements:', error)
           }
         }
+      } catch (error) {
+        console.error('Error loading measurements:', error)
       }
     }
 
@@ -217,32 +169,11 @@ export default function ProfilePage() {
         avatar_url: avatar,
       })
 
-      // Save measurements to Supabase
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: userId,
-          height: measurements.height,
-          shoe_size: measurements.shoeSize,
-          measurements: {
-            chest: measurements.chest,
-            waist: measurements.waist,
-            hips: measurements.hips
-          }
-        })
-
-      if (error) {
-        console.error('Error saving profile to database:', error)
-        // Fallback to localStorage
-        localStorage.setItem('userMeasurements', JSON.stringify(measurements))
-        setUploadError('Failed to save profile. Using local storage.')
-        setTimeout(() => setUploadError(null), 3000)
-      } else {
-        // Update localStorage as backup
-        localStorage.setItem('userMeasurements', JSON.stringify(measurements))
-        setUploadSuccess('profile-saved')
-        setTimeout(() => setUploadSuccess(null), 3000)
-      }
+      // Save measurements to localStorage (profiles table doesn't support measurements yet)
+      localStorage.setItem('userMeasurements', JSON.stringify(measurements))
+      
+      setUploadSuccess('profile-saved')
+      setTimeout(() => setUploadSuccess(null), 3000)
     } catch (error) {
       console.error('Error saving profile:', error)
       // Fallback to localStorage
@@ -422,6 +353,7 @@ export default function ProfilePage() {
                       width={128}
                       height={128}
                       className="object-cover w-full h-full"
+                      priority
                     />
                   </div>
                   <Button

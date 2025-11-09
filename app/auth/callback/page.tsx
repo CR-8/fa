@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { initializeUserCredits } from '@/lib/credits';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function AuthCallbackPage() {
 
         if (accessToken && refreshToken) {
           // Set the session with the tokens
-          const { error: sessionError } = await supabase.auth.setSession({
+          const { data, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
@@ -28,6 +29,11 @@ export default function AuthCallbackPage() {
             setError(sessionError.message);
             setTimeout(() => router.push('/login'), 2000);
             return;
+          }
+
+          // Initialize credits for new user
+          if (data?.user?.id) {
+            await initializeUserCredits(data.user.id);
           }
 
           // Successfully authenticated, redirect to home
@@ -50,13 +56,18 @@ export default function AuthCallbackPage() {
 
         if (code) {
           // Exchange code for session
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
             console.error('Exchange error:', exchangeError);
             setError(exchangeError.message);
             setTimeout(() => router.push('/login'), 2000);
             return;
+          }
+
+          // Initialize credits for new user
+          if (data?.user?.id) {
+            await initializeUserCredits(data.user.id);
           }
 
           // Successfully authenticated

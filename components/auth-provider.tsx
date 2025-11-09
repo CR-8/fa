@@ -8,7 +8,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, type Profile } from '@/lib/supabase';
-import { getUserCredits, type CreditInfo } from '@/lib/credits';
+import { getUserCredits, initializeUserCredits, type CreditInfo } from '@/lib/credits';
 
 interface AuthContextType {
   user: User | null;
@@ -47,8 +47,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch user credits
   const fetchCredits = async (userId: string) => {
-    const creditInfo = await getUserCredits(userId);
-    setCredits(creditInfo);
+    try {
+      let creditInfo = await getUserCredits(userId);
+      
+      // If credits are null/undefined, try to initialize them
+      if (!creditInfo) {
+        console.log('Credits not found, attempting to initialize...');
+        await initializeUserCredits(userId);
+        
+        // Try fetching again after initialization
+        creditInfo = await getUserCredits(userId);
+      }
+      
+      setCredits(creditInfo);
+    } catch (error) {
+      console.error('Error in fetchCredits:', error);
+      // Set default credits as fallback
+      setCredits({
+        credits_remaining: 10,
+        credits_total: 10,
+        plan_tier: 'free',
+        last_reset: new Date().toISOString(),
+        next_reset: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }
   };
 
   // Refresh credits

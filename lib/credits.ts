@@ -78,6 +78,39 @@ export const PLAN_FEATURES: Record<PlanTier, {
 };
 
 /**
+ * Initialize credits for a new user (fallback if trigger fails)
+ */
+export async function initializeUserCredits(userId: string): Promise<boolean> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const { error } = await supabase
+      .from('user_credits')
+      .insert({
+        user_id: userId,
+        credits_remaining: 10,
+        credits_total: 10,
+        plan_tier: 'free',
+        last_reset_date: today,
+        next_reset_date: tomorrow,
+      });
+
+    if (error) {
+      // Ignore conflict errors (user already has credits)
+      if (error.code === '23505') {
+        return true;
+      }
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Get user's current credit information
  */
 export async function getUserCredits(userId: string): Promise<CreditInfo | null> {
@@ -87,14 +120,68 @@ export async function getUserCredits(userId: string): Promise<CreditInfo | null>
     });
 
     if (error) {
-      console.error('Error getting user credits:', error);
-      return null;
+      return await getUserCreditsDirect(userId);
     }
 
-    return data as CreditInfo;
+    // RPC returns an array of rows, get the first one
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      return await getUserCreditsDirect(userId);
+    }
+
+    // If data is an array, get the first element
+    const creditInfo = Array.isArray(data) ? data[0] : data;
+    
+    // Check if all fields are null - this means the user has no credits record
+    if (!creditInfo || creditInfo.credits_remaining === null || creditInfo.credits_total === null) {
+      // Initialize credits for this user
+      await initializeUserCredits(userId);
+      
+      // Try direct query after initialization
+      return await getUserCreditsDirect(userId);
+    }
+    
+    return creditInfo as CreditInfo;
   } catch (error) {
-    console.error('Exception in getUserCredits:', error);
-    return null;
+    return await getUserCreditsDirect(userId);
+  }
+}
+
+/**
+ * Get user credits directly from table (fallback method)
+ */
+async function getUserCreditsDirect(userId: string): Promise<CreditInfo | null> {
+  try {
+    const { data, error } = await supabase
+      .from('user_credits')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !data) {
+      return {
+        credits_remaining: 10,
+        credits_total: 10,
+        plan_tier: 'free' as PlanTier,
+        last_reset: new Date().toISOString(),
+        next_reset: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      };
+    }
+
+    return {
+      credits_remaining: data.credits_remaining || 10,
+      credits_total: data.credits_total || 10,
+      plan_tier: data.plan_tier || 'free',
+      last_reset: data.last_reset_date || new Date().toISOString(),
+      next_reset: data.next_reset_date || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    };
+  } catch (error) {
+    return {
+      credits_remaining: 10,
+      credits_total: 10,
+      plan_tier: 'free' as PlanTier,
+      last_reset: new Date().toISOString(),
+      next_reset: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    };
   }
 }
 
@@ -113,7 +200,6 @@ export async function deductCredit(
     });
 
     if (error) {
-      console.error('Error deducting credit:', error);
       return {
         success: false,
         error: 'database_error',
@@ -123,7 +209,6 @@ export async function deductCredit(
 
     return data as CreditDeductionResult;
   } catch (error) {
-    console.error('Exception in deductCredit:', error);
     return {
       success: false,
       error: 'exception',
@@ -176,13 +261,11 @@ export async function recordGeneration(
     });
 
     if (error) {
-      console.error('Error recording generation:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Exception in recordGeneration:', error);
     return false;
   }
 }
@@ -203,13 +286,11 @@ export async function getGenerationHistory(
       .limit(limit);
 
     if (error) {
-      console.error('Error fetching generation history:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Exception in getGenerationHistory:', error);
     return [];
   }
 }
@@ -231,7 +312,6 @@ export async function getUserPlanTier(userId: string): Promise<PlanTier> {
 
     return data.plan_tier as PlanTier;
   } catch (error) {
-    console.error('Exception in getUserPlanTier:', error);
     return 'free';
   }
 }
@@ -250,7 +330,6 @@ export async function updateUserPlanTier(
       .eq('id', userId);
 
     if (error) {
-      console.error('Error updating plan tier:', error);
       return false;
     }
 
@@ -266,7 +345,6 @@ export async function updateUserPlanTier(
 
     return true;
   } catch (error) {
-    console.error('Exception in updateUserPlanTier:', error);
     return false;
   }
 }
@@ -287,7 +365,6 @@ export async function getCreditStats(userId: string, days: number = 30) {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching credit stats:', error);
       return null;
     }
 
@@ -305,7 +382,6 @@ export async function getCreditStats(userId: string, days: number = 30) {
       dailyAverage: totalCreditsUsed / days,
     };
   } catch (error) {
-    console.error('Exception in getCreditStats:', error);
     return null;
   }
 }
